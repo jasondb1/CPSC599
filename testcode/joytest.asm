@@ -248,17 +248,16 @@ finished:
 
 ; message_x     dc.w  next_string_location  
 ;               dc.b  "MESSAGE", 00
-STRINGS:
 
-string0:        dc.w    string1
+
 string_greet:   dc.b    "***JOYSTICK TEST***", $0d, $0a,  "ANY KEY EXITS...", $0d, $0a, $00
-string1:        dc.w    string2
 string_press_key: dc.b    "ANY KEY TO CONTINUE...", $10, $13, $00
-string2:        dc.w    $0000
 string_fire:    dc.b    " FIRE", $0d, $00
 string_left:    dc.b    " LEFT", $0d, $00
 string_right:    dc.b   "RIGHT", $0d, $00
 string_up:    dc.b      "   UP", $0d, $00
 string_down:    dc.b    " DOWN", $0d, $00
+strings: dc.w string_greet, string_press_key, string_fire, string_left
+         dc.w string_right, string_up, string_down
 
 
