@@ -114,9 +114,6 @@ mainLoop:
     cpy     #$04
     bne     nextVoice
     
-    lda     #$00
-    sta     VOICE1
-    
     jmp     finished
 
 
