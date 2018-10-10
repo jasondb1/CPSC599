@@ -77,11 +77,12 @@ CHARSETSELECT equ $9005
 TEMP1       equ $F7
 TEMP2       equ $F8
 TEMP3       equ $F9
-TEMP4       equ $FA
+TIMERRESOLUION  equ $FA ; in Jiffys
 
 MSG_PTR_L    equ $FB
 MSG_PTR_H    equ $FC
-FREE3  equ $FD
+
+PREVJIFFY   equ $FD
 COUNTDOWN   equ $FE
 
 ;possible to use for (basic fp and numeric area $57 - $70
@@ -105,24 +106,42 @@ startMl:
 
     jsr     init
     
-    lda     #10 ;set countdown timer
-    sta     COUNTDOWN
+
 
     clc
     ldx     #$00 ;index
+    
+    ;reset delay
+    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    sta     COUNTDOWN
 
 mainLoop:
     
+    
+    jsr     timer
+    lda     COUNTDOWN     ;delay
+    cmp     #0
+    bne     mainLoop
+    
+    ;reset delay
+    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    sta     COUNTDOWN
+    
+    lda     #8  ;blank screen whare character was
+    sta     SCREENMAP,x
+    
+    inx
     txa
-    sta      SCREENMAP,x  
+    and     #$01
+    sta      SCREENMAP,x ;print next character
     
     pha                     ;color character
     lda     #YELLOW
     sta     COLORMAP,x
     pla     
     
-    inx
-    cpx     #63
+
+    cpx     #21
     bne     mainLoop
     
     jsr     loop_kw
@@ -130,26 +149,41 @@ mainLoop:
     jmp     finished
     
 ;==================================================================
-; timer - this is a 1 second timer but can be altered
+; timer - this is a 1 second countdown timer but can be altered
+; note this only allows just over 4 seconds
+; this should be modified as required
+; 
+; each jiffy is stored and on expiry 
+;
+; can use this for other game events as well as required
+
 timer: 
     ;read timer value
     ;if > 60 then reset timer and reduce COUNTDOWN by 1
+    ;otherwise see if a jiffy has elapsed and inc counter and note duration
 
-    jsr     RDTIM
-    cpy     #59     ;1/60 of second is a jiffy so 60 is 1 second
-    bpl     resetTimer
+    lda     PREVJIFFY
+    cmp     JCLOCKL
+    beq     timer_continue  ; do nothing if a jiffy has not elapsed
+    inc     PREVJIFFY       ;
+    ;dec     V1DURATION    ; decrement duration of note each jiffy
+    ;dec     V2DURATION    ; decrement duration of note each jiffy
+    ;dec     V3DURATION    ; decrement duration of note each jiffy
+    ;dec     VNDURATION    ; decrement duration of note each jiffy
+
+timer_continue:
+    lda     JCLOCKL
+    cmp     TIMERRESOLUION     ;1/60 of second is a jiffy so 60 is 1 second
+    bpl     resetTimer  
     rts
 
 resetTimer:
-    sec
-    lda     #$01
-    sbc     COUNTDOWN
+    dec     COUNTDOWN
     
     lda     #$00    ;set system clock to 0
-    ldx     #$00
-    ldy     #$00
-    jsr     SETTIM
-   
+    sta     JCLOCKL
+    sta     PREVJIFFY
+timer_end:
     rts     
     
 ;==================================================================
@@ -167,6 +201,10 @@ init:
     ;set border color
     lda     #9
     sta     $900f
+    
+    ;set timerresolution
+    lda   #$01
+    sta   TIMERRESOLUION
     
     
     lda     #>string_greet

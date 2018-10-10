@@ -67,10 +67,10 @@ JCLOCKL      equ $a2
 
 ;===================================================================
 ; User Defined Memory locations
-TEMP1       equ $F7
-TEMP2       equ $F8
-TEMP3       equ $F9
-TEMP4       equ $FA
+FREE1       equ $F7
+FREE2       equ $F8
+FREE3       equ $F9
+TIMERRESOLUION  equ $FA ; in Jiffys
 
 MSG_PTR_L    equ $FB
 MSG_PTR_H    equ $FC
@@ -83,10 +83,37 @@ NOISEDURATION   equ $42
 PREVJIFFY   equ $FD
 COUNTDOWN   equ $FE
 
+;$57-$66 -  float point  area
+V1FREQ      equ $61      ;audio
+V2FREQ      equ $62
+V3FREQ      equ $63
+VNFREQ      equ $64
+V1DURATION  equ $69
+V2DURATION  equ $6a
+V3DURATION  equ $6b
+VNDURATION  equ $6c
+CURRENTSOUND equ $60
+
+FREE4       equ $6d
+FREE5       equ $6e
+FREE6       equ $6f;?
+
+;$4e-53 - misc work area note getin uses (can only use as temp area) 5f?
+TEMP1 equ $4e
+TEMP2 equ $4f
+TEMP3 equ $50
+TEMP4 equ $51
+TEMP5 equ $52
+TEMP6 equ $53
+TEMP7 equ $54
+
+
 ;possible to use for (basic fp and numeric area $57 - $70
 ;possible to use $4e-$53 (misc work area)
 ;#3f-42 - BASIC DATA address
 ;$26-2A product area for multiplication
+
+;033c-03fb - casette buffer area
 ;nonzpage 0293-029e (rs232 storage)
 
     ;basic stub start
@@ -104,7 +131,26 @@ startMl:
     jsr     init
     
 mainLoop:
-    jsr     playNote
+
+    ;while countdown !=0
+    lda     COUNTDOWN
+    cmp     #$00
+    bne     mainLoop_continue
+    
+    lda     #$02        ;restore countdown
+    sta     COUNTDOWN
+    
+    inc     CURRENTSOUND
+    ldx     CURRENTSOUND
+    lda     sound,x
+    ldy     sound_duration,x
+    ldx     #$03    ;change this voice as desired
+    
+    jsr     newSound
+    
+mainLoop_continue:
+    ldx     #$03 ; change this voice as desired
+    jsr     playSound
     jsr     timer
     jsr     GETIN
     beq     mainLoop
@@ -113,37 +159,48 @@ mainLoop:
 
 ;==================================================================
 ; playNote - play a note from melody, duration memory location
+; A is frequency
+; y is duration/modulation  high 2 bits modulation/ low 6 bits duration in jiffys
+;
+; or modulation 00 - no modulation, 01 - mod up, 10, mod down, 11 - ?
 
-playNote:
-
-    ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
-    lda     #$01
-    cmp     NOTEDURATION
-    bmi     playNote_end
-    beq     playNote_silence
+newSound:
+    sta     V1FREQ,x
+    sta     VOICE1,x
     
-    ;new note
-    ldy     CURRENTNOTE
-    lda     melody,y
-    cmp     #$ff
-    bne     playNote_continue
+    sty     V1DURATION,x
+
+playSound:
+
+    ;x is voice
+    lda     V1DURATION,x
+    ;lda     VNDURATION
+    and     #$3f
+    ;cmp     #$00
+    
+    bne     playSound_continue
+
+playSound_silence:   ;turns off sound/note
     lda     #$00
-    sta     CURRENTNOTE
-    tay
-    lda     melody,y
-    
-playNote_continue:    
-    sta     VOICE2
-    lda     duration,y
-    sta     NOTEDURATION
-    inc     CURRENTNOTE; this is the note index
+    sta     VOICE1,x
     rts
 
-playNote_silence:   ;cuts off last jiffy, to provide separation of notes
-    lda     #$00
-    sta     VOICE2
+playSound_continue:
+    
+    lda     V1DURATION,x
+    and     #$C0
+    cmp     #$40
+    bmi     playSound_end       ;no modulation
+    beq     playSound_modup     
+    dec     V1FREQ,x
+    beq     playSound_end
 
-playNote_end:
+playSound_modup:
+    inc     V1FREQ,x
+
+playSound_end:
+    lda     V1FREQ,x
+    sta     VOICE1,x
     rts
     
 ;==================================================================
@@ -164,11 +221,14 @@ timer:
     cmp     JCLOCKL
     beq     timer_continue  ; do nothing if a jiffy has not elapsed
     inc     PREVJIFFY       ;
-    dec     NOTEDURATION    ; decrement duration of note each jiffy
+    dec     V1DURATION    ; decrement duration of note each jiffy
+    dec     V2DURATION    ; decrement duration of note each jiffy
+    dec     V3DURATION    ; decrement duration of note each jiffy
+    dec     VNDURATION    ; decrement duration of note each jiffy
 
 timer_continue:
     lda     JCLOCKL
-    cmp     #$59     ;1/60 of second is a jiffy so 60 is 1 second
+    cmp     TIMERRESOLUION     ;1/60 of second is a jiffy so 60 is 1 second
     bpl     resetTimer  
     rts
 
@@ -186,9 +246,14 @@ timer_end:
 init:
 
     lda     #$00
-    sta     CURRENTNOTE
-    sta     NOTEDURATION
     sta     PREVJIFFY
+    sta     CURRENTSOUND
+    
+    lda     #$01
+    sta     COUNTDOWN
+    
+    lda     #59
+    sta     TIMERRESOLUION
 
     ;clear screen
     lda     #$93
@@ -281,7 +346,7 @@ finished:
     jsr     keyWait
     rts
 
-string_greet:   dc.b    "***MUSIC  TEST***", $0d, $00
+string_greet:   dc.b    "***SOUND  TEST***", $0d, $00
 string_press_key: dc.b    "ANY KEY TO CONTINUE...", $0d, $00
 
 ;           TABLE OF MUSICAL NOTES
@@ -322,7 +387,6 @@ string_press_key: dc.b    "ANY KEY TO CONTINUE...", $0d, $00
 
 ;melody is defined as 2 bytes byte 1 freq(note) and length byte 2
 ; 
-
 ;note index
 ;note: more data could be stored in bits 5-7 of duration
 ;duration is in number of jiffies
@@ -336,3 +400,6 @@ drums:
           dc.b 130, 000, 200, 000, 130, 000, 200, 000,   130, 000, 200, 000, 130, 000, 200, 000, 130, 000, 200, 000, 130, 000, 200, 000, 130, 000, 200, 000, 130, 000, 200, 000, 000, 255 
 drum_duration:
           dc.b  4,   12,   8,   8,   4,   8,   8,  12,     4,   12,   8,   8,   4,   8,   8,  12,  4,  12,   8,   8,   4,   8,   8,  12,   4,   12,   8,   8,   4,   8,   8,  12, 64, 255
+
+sound:          dc.b    128, 150, 170, 190, 210, 230, 250, 128, 150, 170, 190, 210, 230, 250, 128, 150, 170, 190, 210, 230, 250
+sound_duration: dc.b    $01, $02, $03, $04, $05, $06, $07, $43, $43, $48, $41, $47, $4a, $4f, $86, $a0, $88, $84, $81, $8d, $8f
