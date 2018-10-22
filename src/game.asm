@@ -22,13 +22,13 @@
 ;==================================================================
 ; Constants and Kernel Routines
 
-CHROUT  equ $ffd2
-CHRIN   equ $ffcf
-GETIN   equ $ffe4 ;from keyb buffer
-PLOT    equ $fff0 ;sets if carry is set 
-SCNKEY  equ $ff9f
-RDTIM   equ $ffde
-SETTIM  equ $ffdb
+CHROUT          equ $ffd2
+CHRIN           equ $ffcf
+GETIN           equ $ffe4 ;from keyb buffer
+PLOT            equ $fff0 ;sets if carry is set 
+SCNKEY          equ $ff9f
+RDTIM           equ $ffde
+SETTIM          equ $ffdb
 STOP            equ $ffe1
 
 CLOSE           equ $ffc3
@@ -164,59 +164,21 @@ GAMEOVER        equ $029e
 
 basicEnd:    dc.w    0
 
-    
     org     $100d
 
 ;==================================================================
-; init - Initializes stuff - maybe load this into graphics mem run and then discard when screen drawn
+; init - Initializes stuff
 init:
+    ;basic init is in screen memory to save memory
+    jmp     $1e00
     
-    ;set custom character set
-    lda     #$ff
-    sta     CHARSETSELECT
-
-    ;set border color
-    lda     #8
-    sta     $900f
-    
-    ;set timerresolution 1 jiffy
-    lda   #$01
-    sta   TIMERRESOLUTION
-    sta     JOY1_DDRA
+    include     "intro.asm"
  
-    ;initial character under player is blank
-    sta     CHARUNDERPLAYER
-    
-    ;music/voice settings
-    lda     #$00
-    sta     CURRENTNOTE
-    sta     NOTEDURATION
-    sta     PREVJIFFY
-    sta     GAMEOVER
-    sta     PLAYERGOLD
-    
-    ;define character starting postion
-    lda     #$36
-    sta     PLAYERPOS_L
-    lda     #$1e
-    sta     PLAYERPOS_H
-
-    ;initial player 
-    lda     #10
-    sta     PLAYERHEALTH
-    
-    ;reset delay
-    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
-    sta     COUNTDOWN
-    
-    ;initial volume
-    lda     #$0f
-    sta     VOLUME
-    
-    clc
+init_return:
+    jsr     intro
     jsr     drawBoard
-    jsr     drawScreen ;maybe scrap this
-    jsr     movePlayer
+    jsr     drawScreen ;maybe scrap this?
+    jsr     move_player_display
 
 mainLoop:
 mainLoop_continue:
@@ -224,7 +186,7 @@ mainLoop_continue:
     ;these events constantly running
     jsr     timer
     jsr     playSound
-    ;jsr     playNote
+    jsr     playNote
     lda     #$0
     cmp     COUNTDOWN
     bne     mainLoop
@@ -298,14 +260,14 @@ drawBoard_inner:
     lda     #GREEN
     sta     (COLORMAP_L),y
     dey
+    cpy     #$ff
     bne     drawBoard_inner
     
     dec     TEMP_PTR_H
     dec     COLORMAP_H
     dex 
     bne     drawBoard_outer
-    
-    
+
     ;spawn enemies
     
     rts
@@ -322,11 +284,10 @@ movePlayer:
     pha
     jsr     isMoveValid ; or integrate into movements?
     bcs     move_player_end
-    ;TODO: get character under player to store and process if coin or other
     
-    ;print back character under the player
+    ;TODO: get character under player to store and process if coin or other
 
-    ;replace background tile
+    ;replace background tile under char
     ldy     #0
     lda     CHARUNDERPLAYER  ;put back background tile
     sta     (PLAYERPOS_L),y
@@ -359,17 +320,22 @@ move_player_up:
     
 move_player_cont:
 
-    ;add correct values to player movement
+    ;add correct values to player movement - may need to separate subtraction and addition
     txa
     pha
     clc
     adc     PLAYERPOS_L
     sta     PLAYERPOS_L
+    lda     #0
+    adc     PLAYERPOS_H
+    sta     PLAYERPOS_H
     
     pla
     adc     COLORMAP_L
     sta     COLORMAP_L
-    ;if carry/overflow set - do what needs to be done;
+    lda     #0
+    adc     COLORMAP_H
+    sta     COLORMAP_H
 
 move_player_display:       
     ldy     #$0
@@ -389,6 +355,7 @@ move_player_display:
     lda     #YELLOW               
     sta     (COLORMAP_L),y 
     
+    ;step sound
     lda     #$a0
     sta     VOICE1
     lda     #$2
@@ -539,9 +506,9 @@ timer:
     cmp     JCLOCKL
     beq     timer_continue  ; do nothing if a jiffy has not elapsed
     inc     PREVJIFFY      
-    dec     V2DURATION   ; decrement duration of note each jiffy ;
+    dec     V2DURATION   ;  decrement duration of note each jiffy ;
     dec     V1DURATION    ; decrement duration of note each jiffy
-    ;dec     V3DURATION    ; decrement duration of note each jiffy
+    dec     V3DURATION    ; decrement duration of note each jiffy
     dec     VNDURATION    ; decrement duration of note each jiffy
 
 timer_continue:
@@ -564,7 +531,6 @@ timer_end:
 ; keyWait - Waits of any key to be pressed
     
 loop_kw:
-
     jsr     GETIN
     beq     loop_kw
     rts
@@ -630,3 +596,48 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
 
 
     include     "charset.asm"
+    
+;initialization loaded into graphic memory and written over after
+
+	org	$1e00  
+
+    ;set border color
+    lda     #8
+    sta     $900f
+    
+    ;set timerresolution 1 jiffy
+    lda     #$01
+    sta     TIMERRESOLUTION
+    sta     JOY1_DDRA
+ 
+    ;initial character under player is blank
+    sta     CHARUNDERPLAYER
+    
+    ;music/voice settings
+    lda     #$00
+    sta     CURRENTNOTE
+    sta     NOTEDURATION
+    sta     PREVJIFFY
+    sta     GAMEOVER
+    sta     PLAYERGOLD
+    
+    ;define character starting postion
+    lda     #$36
+    sta     PLAYERPOS_L
+    lda     #$1e
+    sta     PLAYERPOS_H
+
+    ;initial player 
+    lda     #10
+    sta     PLAYERHEALTH
+    
+    ;reset delay
+    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    sta     COUNTDOWN
+    
+    ;initial volume
+    lda     #$0f
+    sta     VOLUME
+    
+    clc
+    jmp     init_return
