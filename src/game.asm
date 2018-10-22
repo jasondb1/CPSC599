@@ -238,7 +238,6 @@ mainLoop_continue:
     jsr     GETIN       ;keyboard input ends program right now
     beq     mainLoop
     
-    
     jmp     finished
     
 ;==================================================================
@@ -326,8 +325,8 @@ movePlayer:
     ;TODO: get character under player to store and process if coin or other
     
     ;print back character under the player
-    
-    ;display new character position
+
+    ;replace background tile
     ldy     #0
     lda     CHARUNDERPLAYER  ;put back background tile
     sta     (PLAYERPOS_L),y
@@ -345,18 +344,18 @@ move_player_left:
 
 move_player_right: 
     asl     
-    bcc    move_player_up
+    bcc    move_player_down
     ldx    #1
 
 move_player_down: 
     asl    
     bcc     move_player_up
-    ldx     #-22
+    ldx     #22
 
 move_player_up: 
     asl     
     bcc     move_player_cont
-    ldx     #22
+    ldx     #-22
     
 move_player_cont:
 
@@ -371,8 +370,8 @@ move_player_cont:
     adc     COLORMAP_L
     sta     COLORMAP_L
     ;if carry/overflow set - do what needs to be done;
-    
-    
+
+move_player_display:       
     ldy     #$0
     lda     (PLAYERPOS_L),y
     sta     CHARUNDERPLAYER
