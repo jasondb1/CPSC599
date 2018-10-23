@@ -41,6 +41,9 @@ LOAD            equ $ffd5
 
 ;Graphics related
 ;parts of the playing area
+SCRROWS         equ 23
+SCRCOLS         equ 22
+
 ULX             equ $02
 ULY             equ $02
 LRX             equ $21
@@ -138,8 +141,8 @@ TEMP_PTR_H      equ $F8
 COLORMAP_L      equ $F9
 COLORMAP_H      equ $FA 
 
-PLAYERPOS_L     equ $FB ; actual screen address of player keeps track of player 
-PLAYERPOS_H     equ $FC ; and serves as a pointer where to place graphic character of player
+CHARPOS_L     equ $FB ; actual screen address of player keeps track of player 
+CHARPOS_H     equ $FC ; and serves as a pointer where to place graphic character of player
 
 PREVJIFFY       equ $FD
 COUNTDOWN       equ $FE
@@ -154,6 +157,8 @@ CHARUNDERPLAYER equ $0294 ;
 COLORUNDERPLAYER equ $0295 ; 
 PLAYERHEALTH    equ $0296 ;
 PLAYERGOLD      equ $0297 ;
+PLAYERY         equ $0298 ;
+PLAYERX         equ $0299 ;
 
 GAMEOVER        equ $029e
 
@@ -179,7 +184,7 @@ init:
     include     "intro.asm"
  
 init_return:
-    jsr     intro
+    ;jsr     intro
     
     ;set custom character set
     lda     #$ff
@@ -243,8 +248,6 @@ drawScreen_loop
 drawBoard:
 
 ;TODO - draw random background elements - rocks trees, paths, houses
-    
-    ldx     #$00
     lda     #$1f
     sta     TEMP_PTR_H
     lda     #$97
@@ -254,6 +257,7 @@ drawBoard:
     sty     COLORMAP_L
     
     ldx     #$02
+    stx     TEMP1
     ldy     #$cd 
     jmp     drawBoard_inner
 drawBoard_outer:
@@ -267,13 +271,14 @@ drawBoard_inner:
     bcs     drawBoard_base_char
     lda     #4  ;TODO randomize what is drawn - these will be something in the first 8-10 characters
     jmp     drawBoard_to_screen
-    ;else
+
 drawBoard_base_char:
     lda     #CHAR_BASE
     
 drawBoard_to_screen:   
     sta     (TEMP_PTR_L),y
-    lda     #GREEN
+    tax
+    lda     char_color,x
     sta     (COLORMAP_L),y
     dey
     cpy     #$ff
@@ -281,12 +286,12 @@ drawBoard_to_screen:
     
     dec     TEMP_PTR_H
     dec     COLORMAP_H
-    dex 
+    dec     TEMP1 
     bne     drawBoard_outer
 
     ;spawn enemies
     
-move_player_return: ;needed for movePlayer because subroutine is too long to jump to end
+;move_player_return: ;needed for movePlayer because subroutine is too long to jump to end
     rts
     
 ;==================================================================
@@ -295,28 +300,20 @@ move_player_return: ;needed for movePlayer because subroutine is too long to jum
 
 movePlayer:
     txa
-    beq     move_player_return ;if no movement
+    beq     move_player_end ;if no movement
 
     pha
     jsr     isMoveValid ; or integrate into movements? collisions?
-    bcs     move_player_return
+    bcs     move_player_end
 
 
     ;TODO: get character under player to store and process if coin or other
     
     ;replace background tile under char
-    ldy     #0
-    lda     CHARUNDERPLAYER  ;put back background tile
-    sta     (PLAYERPOS_L),y
-    
-    lda     PLAYERPOS_L        ; color character
-    sta     COLORMAP_L
-    clc
-    lda     PLAYERPOS_H
-    adc     #120                ;distance between screenmap and colormap
-    sta     COLORMAP_H
-    lda     COLORUNDERPLAYER
-    sta     (COLORMAP_L),y
+    ldy     PLAYERY
+    ldx     PLAYERX
+    lda     CHARUNDERPLAYER
+    jsr     put_char
 
     pla
     
@@ -325,76 +322,35 @@ movePlayer:
 move_player_left:    
     asl 
     bcc     move_player_right
-    ldx     #1
-    ldy     #1
-
+    dec     PLAYERX
+    
 move_player_right: 
     asl     
     bcc    move_player_down
-    ldx    #1
-    ldy    #0
-
+    inc    PLAYERX
+    
 move_player_down: 
     asl    
     bcc     move_player_up
-    ldx     #22
-    ldy     #0
-
+    inc     PLAYERY
+    
 move_player_up: 
     asl     
     bcc     move_player_cont
-    ldx     #22
-    ldy     #1
+    dec     PLAYERY
     
 move_player_cont:
 
-    ;add correct values to player movement - may need to separate subtraction and addition
-    txa
-    cpy     #1              ;subtract if y is set
-    beq     move_player_sub
     
-    ;add 
-    clc
-    adc     PLAYERPOS_L
-    sta     PLAYERPOS_L
-    lda     #0
-    adc     PLAYERPOS_H
-    sta     PLAYERPOS_H
-    
-    jmp     move_player_display
-    
-move_player_sub:
-    sta     TEMP1
-    lda     PLAYERPOS_L
-    sec
-    sbc     TEMP1
-    sta     PLAYERPOS_L
-    lda     PLAYERPOS_H
-    sbc     #$0
-    sta     PLAYERPOS_H
 
-move_player_display:       
-
-    ;player color position
-    lda     PLAYERPOS_L        
-    sta     COLORMAP_L
-    clc
-    lda     PLAYERPOS_H
-    adc     #120                ;distance between screenmap and colormap
-    sta     COLORMAP_H
-
-    ;store char under player
-    ldy     #$0
-    lda     (PLAYERPOS_L),y
-    sta     CHARUNDERPLAYER
-    lda     (COLORMAP_L),y
-    sta     COLORUNDERPLAYER
+move_player_display:           
     
     ;draw player in new position
-    lda     #CHAR_PLAYER       ; load the character sprite
-    sta     (PLAYERPOS_L),y    ; print next character to position
-    lda     #YELLOW               
-    sta     (COLORMAP_L),y 
+    ldy     PLAYERY
+    ldx     PLAYERX
+    lda     #CHAR_PLAYER
+    jsr     put_char
+    sta     CHARUNDERPLAYER
     
     ;step sound
     lda     #$a0
@@ -529,6 +485,86 @@ cont_rj:
     jsr     movePlayer
     rts
     
+    
+;==================================================================
+; position_to_offset - converts rows and columns to offset
+;
+; a dumb multiplier essentially
+;
+; y - the row
+; x - the col
+;
+; returns offset_low in a
+;         offset_high in x
+
+position_to_offset:
+    
+    stx     TEMP1   ;stores column
+    lda     #$00
+    tax             ; x will hold the offset_high
+    
+pto_loop:           ;multiply y by 22 (num of rows - 1)
+    dey
+    beq     pto_add_col
+    clc
+    adc     #SCRCOLS     
+    bcc     pto_loop
+    inx
+    jmp     pto_loop 
+
+pto_add_col:
+    ; add x (column offset)
+    clc
+    adc     TEMP1       ;final result in accumulator  
+
+    rts
+;==================================================================
+; put_char - puts character onto screen
+; a- the character (0-63) to place on screen
+; y - the row
+; x - the col
+;
+; returns - previous character
+
+put_char:
+    pha
+    lda     #<BASE_SCREEN
+    sta     CHARPOS_L
+    lda     #>BASE_SCREEN
+    sta     CHARPOS_H
+    
+    jsr     position_to_offset ; x is ofset_high a - offset_low
+    tay
+    
+    ;deal with high bit
+    cpx     #$1
+    bne     put_char_cont
+    inc     CHARPOS_H         ; increment high if set
+    
+put_char_cont:
+    ;color position
+    lda     CHARPOS_L        
+    sta     COLORMAP_L
+    clc
+    lda     CHARPOS_H
+    adc     #120                ;distance between screenmap and colormap
+    sta     COLORMAP_H
+    
+    ;store char under position
+    lda     (CHARPOS_L),y
+    sta     TEMP1
+    
+    ;draw character in new position
+    pla       ; load the character
+    tax
+    sta     (CHARPOS_L),y    ; print next character to position
+    lda     char_color,x
+    sta     (COLORMAP_L),y 
+    
+    lda     TEMP1           ;return the previous character
+
+    rts
+    
 ;==================================================================
 ; timer - this is a 1 second countdown timer but can be altered
 ; note this only allows just over 4 seconds
@@ -657,7 +693,14 @@ finished:
 ;            e        d       c       
 melody:   dc.b 207, 201, 195, 207, 201, 195, 195, 195, 195, 195, 201, 201, 201, 201, 207, 201, 195,  00, 255
 duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8,   8,  16,  16,  32,  64, 255
-
+char_color: dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;0-7
+            dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;8-15
+            dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;16-23
+            dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
+            dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
+            dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
+            dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;48-55
+            dc.b 00, 05, 05, 05, 05, 01, 07, 07 ;56-63
 
     include     "charset.asm"
     
@@ -687,9 +730,9 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
     
     ;define character starting postion
     lda     #$36
-    sta     PLAYERPOS_L
+    sta     CHARPOS_L
     lda     #$1e
-    sta     PLAYERPOS_H
+    sta     CHARPOS_H
 
     ;initial player 
     lda     #10
