@@ -9,6 +9,9 @@ intro:
     lda     #$a0       ;position to the bottom of the screen
     sta     SCR_VER
     
+    lda     #RED
+    sta     646
+    
     ;display text
     ldy     #00
 intro_next_char:
@@ -21,6 +24,7 @@ intro_next_char:
 intro_loop:       
     ;animation timer
     jsr     timer
+    jsr     playNote ;if music is wanted for intro
     lda     #$0
     cmp     COUNTDOWN
     bne     intro_loop
@@ -40,14 +44,9 @@ intro_loop:
 intro_wait:
     jsr     GETIN       ;keyboard input ends intro right now
     beq     intro_wait
-
-   ;set custom character set
-    lda     #$ff
-    sta     CHARSETSELECT
     
     rts
 
-    
 
 title:    dc.b    "WITCHER 0.3", $0d, $0d   ;13
           dc.b    "P BOROWOY", $0d          ;10

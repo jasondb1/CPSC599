@@ -46,6 +46,7 @@ ULY             equ $02
 LRX             equ $21
 LRY             equ $20
 CHAR_BLANK      equ #00
+CHAR_BASE       equ #01
 CHAR_PLAYER     equ #63
 
 ;movement related
@@ -56,6 +57,7 @@ LEFT            equ $80
 
 ;==================================================================
 ;Colors
+COLORREG        equ 646
 BLACK           equ 0
 WHITE           equ 1
 RED             equ 2
@@ -91,6 +93,8 @@ VOLUME          equ $900e ;first 4 bits
 JCLOCKL         equ $00a2
 CHARSET         equ $1c00
 CHARSETSELECT   equ $9005
+
+RANDSEED        equ $8b
 
 ;===================================================================
 ; User Defined Memory locations
@@ -147,7 +151,7 @@ COUNTDOWN       equ $FE
 PLAYERSECTOR    equ $0293   ;the sector where the player is (keeps track of where in the
                             ;      world the player is)
 CHARUNDERPLAYER equ $0294 ; 
-CHARCOLORUNDERP equ $0295 ; 
+COLORUNDERPLAYER equ $0295 ; 
 PLAYERHEALTH    equ $0296 ;
 PLAYERGOLD      equ $0297 ;
 
@@ -175,7 +179,12 @@ init:
     include     "intro.asm"
  
 init_return:
-    jsr     intro
+    ;jsr     intro
+    
+    ;set custom character set
+    lda     #$ff
+    sta     CHARSETSELECT
+    
     jsr     drawBoard
     jsr     drawScreen ;maybe scrap this?
     jsr     move_player_display
@@ -253,9 +262,16 @@ drawBoard_outer:
 
 drawBoard_inner:
     ;if random element then
-    
+    jsr     prand_newseed
+    cmp     #4  ;4/255 chance of being a scenery element
+    bcs     drawBoard_base_char
+    lda     #4  ;TODO randomize what is drawn - these will be something in the first 8-10 characters
+    jmp     drawBoard_to_screen
     ;else
-    lda     #$1
+drawBoard_base_char:
+    lda     #CHAR_BASE
+    
+drawBoard_to_screen:   
     sta     (TEMP_PTR_L),y
     lda     #GREEN
     sta     (COLORMAP_L),y
@@ -270,6 +286,7 @@ drawBoard_inner:
 
     ;spawn enemies
     
+move_player_return: ;needed for movePlayer because subroutine is too long to jump to end
     rts
     
 ;==================================================================
@@ -277,21 +294,28 @@ drawBoard_inner:
 ; x - direction to move player 0 - do not move., 8 - up, 4 -down, 2 - right, 1 - left
 
 movePlayer:
-    
     txa
-    beq     move_player_end ;if no movement
+    beq     move_player_return ;if no movement
 
     pha
-    jsr     isMoveValid ; or integrate into movements?
-    bcs     move_player_end
-    
-    ;TODO: get character under player to store and process if coin or other
+    jsr     isMoveValid ; or integrate into movements? collisions?
+    bcs     move_player_return
 
+
+    ;TODO: get character under player to store and process if coin or other
+    
     ;replace background tile under char
     ldy     #0
     lda     CHARUNDERPLAYER  ;put back background tile
     sta     (PLAYERPOS_L),y
-    lda     CHARCOLORUNDERP
+    
+    lda     PLAYERPOS_L        ; color character
+    sta     COLORMAP_L
+    clc
+    lda     PLAYERPOS_H
+    adc     #120                ;distance between screenmap and colormap
+    sta     COLORMAP_H
+    lda     COLORUNDERPLAYER
     sta     (COLORMAP_L),y
 
     pla
@@ -301,28 +325,35 @@ movePlayer:
 move_player_left:    
     asl 
     bcc     move_player_right
-    ldx     #-1
+    ldx     #1
+    ldy     #1
 
 move_player_right: 
     asl     
     bcc    move_player_down
     ldx    #1
+    ldy    #0
 
 move_player_down: 
     asl    
     bcc     move_player_up
     ldx     #22
+    ldy     #0
 
 move_player_up: 
     asl     
     bcc     move_player_cont
-    ldx     #-22
+    ldx     #22
+    ldy     #1
     
 move_player_cont:
 
     ;add correct values to player movement - may need to separate subtraction and addition
     txa
-    pha
+    cpy     #1              ;subtract if y is set
+    beq     move_player_sub
+    
+    ;add 
     clc
     adc     PLAYERPOS_L
     sta     PLAYERPOS_L
@@ -330,28 +361,38 @@ move_player_cont:
     adc     PLAYERPOS_H
     sta     PLAYERPOS_H
     
-    pla
-    adc     COLORMAP_L
-    sta     COLORMAP_L
-    lda     #0
-    adc     COLORMAP_H
-    sta     COLORMAP_H
+    jmp     move_player_display
+    
+move_player_sub:
+    sta     TEMP1
+    lda     PLAYERPOS_L
+    sec
+    sbc     TEMP1
+    sta     PLAYERPOS_L
+    lda     PLAYERPOS_H
+    sbc     #$0
+    sta     PLAYERPOS_H
 
 move_player_display:       
+
+    ;player color position
+    lda     PLAYERPOS_L        
+    sta     COLORMAP_L
+    clc
+    lda     PLAYERPOS_H
+    adc     #120                ;distance between screenmap and colormap
+    sta     COLORMAP_H
+
+    ;store char under player
     ldy     #$0
     lda     (PLAYERPOS_L),y
     sta     CHARUNDERPLAYER
     lda     (COLORMAP_L),y
-    sta     CHARCOLORUNDERP
+    sta     COLORUNDERPLAYER
     
+    ;draw player in new position
     lda     #CHAR_PLAYER       ; load the character sprite
     sta     (PLAYERPOS_L),y    ; print next character to position
-    
-    lda     PLAYERPOS_L        ; color character
-    sta     COLORMAP_L
-    lda     #>COLORMAP
-    sta     COLORMAP_H
-       
     lda     #YELLOW               
     sta     (COLORMAP_L),y 
     
@@ -501,7 +542,7 @@ timer:
     ;read timer value
     ;if > 60 then reset timer and reduce COUNTDOWN by 1
     ;otherwise see if a jiffy has elapsed and inc counter and note duration
-
+    
     lda     PREVJIFFY
     cmp     JCLOCKL
     beq     timer_continue  ; do nothing if a jiffy has not elapsed
@@ -525,7 +566,30 @@ resetTimer:
     sta     PREVJIFFY
 timer_end:
     rts     
-    
+
+;==================================================================
+; prand - simple linear feedback prng
+; if more randomness is required seed with something related to player input
+; return prnad number in accumulator
+; A better generator may work better
+
+prand_newseed:
+    lda     JCLOCKL
+    adc     RANDSEED
+    sta     RANDSEED
+
+prand:
+    lda     RANDSEED
+    beq     doEor ;accounts for 0
+    asl
+    bcc     noEor
+doEor: 
+            eor #$1d
+noEor: 
+    sta     RANDSEED
+            
+    rts
+   
 
 ;==================================================================
 ; keyWait - Waits of any key to be pressed
@@ -601,7 +665,7 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
 
 	org	$1e00  
 
-    ;set border color
+    ;set border/screen color
     lda     #8
     sta     $900f
     
