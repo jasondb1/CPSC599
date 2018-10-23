@@ -179,7 +179,7 @@ init:
     include     "intro.asm"
  
 init_return:
-    ;jsr     intro
+    jsr     intro
     
     ;set custom character set
     lda     #$ff
