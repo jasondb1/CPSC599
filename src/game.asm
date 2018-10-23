@@ -44,10 +44,10 @@ LOAD            equ $ffd5
 SCRROWS         equ 23
 SCRCOLS         equ 22
 
-ULX             equ $02
-ULY             equ $02
-LRX             equ $21
-LRY             equ $20
+ULX             equ $1      ;screen starts at 1,1
+ULY             equ $1
+LRX             equ 1+21
+LRY             equ 1+20
 CHAR_BLANK      equ #00
 CHAR_BASE       equ #01
 CHAR_PLAYER     equ #63
@@ -192,7 +192,7 @@ init_return:
     
     jsr     drawBoard
     jsr     drawScreen ;maybe scrap this?
-    jsr     move_player_display
+    jsr     move_player_cont
 
 mainLoop:
 mainLoop_continue:
@@ -341,10 +341,6 @@ move_player_up:
     
 move_player_cont:
 
-    
-
-move_player_display:           
-    
     ;draw player in new position
     ldy     PLAYERY
     ldx     PLAYERX
@@ -357,6 +353,8 @@ move_player_display:
     sta     VOICE1
     lda     #$2
     sta     V1DURATION
+
+    ;jsr update player status
 
 move_player_end:
     rts
@@ -420,7 +418,7 @@ playSound_end:
     rts
     
 ;==================================================================
-; readJoy - read Joystik controller
+; readJoy - read Joystick controller
 ;
 ; ?sets JOY1_STATE  bit 5 -fire, 4 - left, 3 - right, 2 - down, 1 - up
 ; use bit 7 for fire latch? to detect double click
@@ -496,9 +494,9 @@ cont_rj:
 ;
 ; returns offset_low in a
 ;         offset_high in x
-
 position_to_offset:
     
+    dex
     stx     TEMP1   ;stores column
     lda     #$00
     tax             ; x will hold the offset_high
@@ -516,7 +514,10 @@ pto_add_col:
     ; add x (column offset)
     clc
     adc     TEMP1       ;final result in accumulator  
-
+    bcc     pto_end
+    inx
+    
+pto_end:
     rts
 ;==================================================================
 ; put_char - puts character onto screen
@@ -533,7 +534,7 @@ put_char:
     lda     #>BASE_SCREEN
     sta     CHARPOS_H
     
-    jsr     position_to_offset ; x is ofset_high a - offset_low
+    jsr     position_to_offset ; return x is offset_high adder a - offset
     tay
     
     ;deal with high bit
@@ -565,6 +566,85 @@ put_char_cont:
 
     rts
     
+;==================================================================
+; get_char - puts character onto screen
+; 
+; y - the row
+; x - the col
+;
+; returns - previous character
+
+get_char:
+ 
+    lda     #<BASE_SCREEN
+    sta     CHARPOS_L
+    lda     #>BASE_SCREEN
+    sta     CHARPOS_H
+    
+    jsr     position_to_offset ; return x is offset_high adder a - offset
+    tay
+    
+    ;deal with high bit
+    cpx     #$1
+    bne     put_char_cont
+    inc     CHARPOS_H         ; increment high if set
+    
+get_char_cont:
+    ;store char under position
+    lda     (CHARPOS_L),y ;return character at y,x        
+
+    rts    
+
+;==================================================================
+; mirror_char - mirrors the character in a and changes char in memory
+;
+; use to reverse direction of character
+; 
+; a - character
+;
+
+mirror_char:
+    asl     ;multiply a by 8 to get offset
+    asl
+    asl
+    
+    lda     #<char_set  ;set character pointer
+    sta     TEMP_PTR_L
+    lda     #>char_set
+    sta     TEMP_PTR_H
+    lda     #$1
+    sta     TEMP1
+    ldy     #7
+
+mc_loop_outer:              ;loop through each byte of character
+    ldx     #7
+    lda     (TEMP_PTR_L),y
+    sta     TEMP2
+
+mc_loop_inner:              ;loop through each bit of byte
+    lsr     TEMP2
+    bcs     mc_bitset
+    asl
+    jmp     mc_loop_inner_test
+
+mc_bitset:
+    asl
+    ora     TEMP1
+    
+mc_loop_inner_test:    
+    dex
+    cpx     $ff
+    bne     mc_loop_inner
+    
+    sta     (TEMP_PTR_L),y  ;store reversed byte into place
+    dey
+    cpy     $ff
+    bne     mc_loop_outer
+
+mc_end:
+    rts
+
+
 ;==================================================================
 ; timer - this is a 1 second countdown timer but can be altered
 ; note this only allows just over 4 seconds
@@ -693,7 +773,9 @@ finished:
 ;            e        d       c       
 melody:   dc.b 207, 201, 195, 207, 201, 195, 195, 195, 195, 195, 201, 201, 201, 201, 207, 201, 195,  00, 255
 duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8,   8,  16,  16,  32,  64, 255
-char_color: dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;0-7
+
+;if space is required move this to cassette buffer or compact to 4 bit colors
+char_color: dc.b 00, 05, 05, 07, 07, 07, 05, 05 ;0-7
             dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;8-15
             dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;16-23
             dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
@@ -729,14 +811,12 @@ char_color: dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;0-7
     sta     PLAYERGOLD
     
     ;define character starting postion
-    lda     #$36
-    sta     CHARPOS_L
-    lda     #$1e
-    sta     CHARPOS_H
 
     ;initial player 
     lda     #10
     sta     PLAYERHEALTH
+    sta     PLAYERX
+    sta     PLAYERY
     
     ;reset delay
     lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
