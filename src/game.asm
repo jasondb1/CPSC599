@@ -51,6 +51,14 @@ LRY             equ 1+20
 CHAR_BLANK      equ #00
 CHAR_BASE       equ #01
 CHAR_PLAYER     equ #63
+CHAR_PLAYER_L	equ #59
+
+;enemy related
+ENEMY_SMOL		equ #53
+ENEMY_BOSS_UL	equ #55
+ENEMY_BOSS_UR	equ #56
+ENEMY_BOSS_LL	equ #57
+ENEMY_BOSS_LR	equ #58
 
 ;movement related
 UP              equ $10
@@ -159,6 +167,8 @@ PLAYERHEALTH    equ $0296 ;
 PLAYERGOLD      equ $0297 ;
 PLAYERY         equ $0298 ;
 PLAYERX         equ $0299 ;
+PLAYERDIR		equ	$029a
+TEMPVAR			equ $029b
 
 GAMEOVER        equ $029e
 
@@ -184,7 +194,7 @@ init:
     include     "intro.asm"
  
 init_return:
-    ;jsr     intro
+    jsr     intro
     
     ;set custom character set
     lda     #$ff
@@ -233,11 +243,41 @@ drawScreen_loop
     sta     SCREENSTATUS+2
     lda     #41
     sta     SCREENSTATUS+24
-    
+
+	;health bars
+	lda		#17
+	sta		SCREENSTATUS+4
+	lda		#17
+	sta		SCREENSTATUS+5
+	lda		#17
+	sta		SCREENSTATUS+6
+	lda		#17
+	sta		SCREENSTATUS+7
+	lda		#17
+	sta		SCREENSTATUS+8
+
+	;money numbers
+	lda		#30
+	sta		SCREENSTATUS+26
+	lda		#30
+	sta		SCREENSTATUS+27
+
     lda     #RED
     sta     COLORMAPSTATUS+2
     lda     #YELLOW
     sta     COLORMAPSTATUS+24
+	 
+	;health bar colours
+	lda		#RED
+	sta		COLORMAPSTATUS+4
+	lda		#YELLOW
+	sta		COLORMAPSTATUS+5
+	lda		#YELLOW
+	sta		COLORMAPSTATUS+6
+	lda		#YELLOW
+	sta		COLORMAPSTATUS+7
+	lda		#GREEN
+	sta		COLORMAPSTATUS+8
     
     rts
 
@@ -267,9 +307,23 @@ drawBoard_outer:
 drawBoard_inner:
     ;if random element then
     jsr     prand_newseed
-    cmp     #4  ;4/255 chance of being a scenery element
-    bcs     drawBoard_base_char
+    cmp     #5  ;5/255 chance of being a GRASS element
+    bcs     drawBoard_rock
     lda     #4  ;TODO randomize what is drawn - these will be something in the first 8-10 characters
+    jmp     drawBoard_to_screen
+
+drawBoard_rock:
+    jsr     prand_newseed
+    cmp     #2  ;2/255 chance of being a ROCK element
+    bcs     drawBoard_enemy_smol
+    lda     #3
+    jmp     drawBoard_to_screen
+
+drawBoard_enemy_smol:
+	jsr     prand_newseed
+	cmp 	#2
+    bcs     drawBoard_base_char
+    lda     #53
     jmp     drawBoard_to_screen
 
 drawBoard_base_char:
@@ -323,11 +377,19 @@ move_player_left:
     asl 
     bcc     move_player_right
     dec     PLAYERX
-    
+    sta 	TEMPVAR
+    lda 	#$00
+    sta 	PLAYERDIR
+    lda 	TEMPVAR
+
 move_player_right: 
     asl     
-    bcc    move_player_down
-    inc    PLAYERX
+    bcc    	move_player_down
+    inc    	PLAYERX
+    sta 	TEMPVAR
+    lda 	#$01
+    sta 	PLAYERDIR
+    lda 	TEMPVAR
     
 move_player_down: 
     asl    
@@ -344,7 +406,18 @@ move_player_cont:
     ;draw player in new position
     ldy     PLAYERY
     ldx     PLAYERX
-    lda     #CHAR_PLAYER
+
+    lda 	PLAYERDIR
+    cmp 	#$01
+
+    bne 	move_player_direction_l
+    lda 	#CHAR_PLAYER 				;facing right
+    jmp 	move_player_direction_done
+
+move_player_direction_l:
+    lda     #CHAR_PLAYER_L 				;facing left
+
+move_player_direction_done:
     jsr     put_char
     sta     CHARUNDERPLAYER
     
@@ -565,7 +638,7 @@ put_char_cont:
     lda     TEMP1           ;return the previous character
 
     rts
-    
+
 ;==================================================================
 ; get_char - puts character onto screen
 ; 
@@ -782,7 +855,7 @@ char_color: dc.b 00, 05, 05, 07, 07, 07, 05, 05 ;0-7
             dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
             dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
             dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;48-55
-            dc.b 00, 05, 05, 05, 05, 01, 07, 07 ;56-63
+            dc.b 00, 05, 05, 07, 05, 01, 07, 07 ;56-63
 
     include     "charset.asm"
     
@@ -801,7 +874,10 @@ char_color: dc.b 00, 05, 05, 07, 07, 07, 05, 05 ;0-7
  
     ;initial character under player is blank
     sta     CHARUNDERPLAYER
-    
+ 	
+    ;initial character direction is right (1)
+    sta 	PLAYERDIR
+
     ;music/voice settings
     lda     #$00
     sta     CURRENTNOTE
