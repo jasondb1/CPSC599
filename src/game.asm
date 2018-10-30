@@ -51,6 +51,14 @@ LRY             equ 1+20
 CHAR_BLANK      equ #00
 CHAR_BASE       equ #01
 CHAR_PLAYER     equ #63
+CHAR_PLAYER_L	equ #59
+
+;enemy related
+ENEMY_SMOL		equ #53
+ENEMY_BOSS_UL	equ #55
+ENEMY_BOSS_UR	equ #56
+ENEMY_BOSS_LL	equ #57
+ENEMY_BOSS_LR	equ #58
 
 ;movement related
 UP              equ $10
@@ -159,6 +167,8 @@ PLAYERHEALTH    equ $0296 ;
 PLAYERGOLD      equ $0297 ;
 PLAYERY         equ $0298 ;
 PLAYERX         equ $0299 ;
+PLAYERDIR		equ	$029a
+TEMPVAR			equ $029b
 
 GAMEOVER        equ $029e
 
@@ -184,7 +194,7 @@ init:
     include     "intro.asm"
  
 init_return:
-    ;jsr     intro
+    jsr     intro
     
     ;set custom character set
     lda     #$ff
@@ -199,6 +209,7 @@ mainLoop_continue:
         
     ;these events constantly running
     jsr     timer
+    jsr     moveEnemy
     jsr     playSound
     jsr     playNote
     lda     #$0
@@ -233,11 +244,41 @@ drawScreen_loop
     sta     SCREENSTATUS+2
     lda     #41
     sta     SCREENSTATUS+24
-    
+
+	;health bars
+	lda		#19
+	sta		SCREENSTATUS+4
+	lda		#19
+	sta		SCREENSTATUS+5
+	lda		#19
+	sta		SCREENSTATUS+6
+	lda		#19
+	sta		SCREENSTATUS+7
+	lda		#19
+	sta		SCREENSTATUS+8
+
+	;money numbers
+	lda		#30
+	sta		SCREENSTATUS+26
+	lda		#30
+	sta		SCREENSTATUS+27
+
     lda     #RED
     sta     COLORMAPSTATUS+2
     lda     #YELLOW
     sta     COLORMAPSTATUS+24
+	 
+	;health bar colours
+	lda		#RED
+	sta		COLORMAPSTATUS+4
+	lda		#YELLOW
+	sta		COLORMAPSTATUS+5
+	lda		#YELLOW
+	sta		COLORMAPSTATUS+6
+	lda		#YELLOW
+	sta		COLORMAPSTATUS+7
+	lda		#GREEN
+	sta		COLORMAPSTATUS+8
     
     rts
 
@@ -267,9 +308,23 @@ drawBoard_outer:
 drawBoard_inner:
     ;if random element then
     jsr     prand_newseed
-    cmp     #4  ;4/255 chance of being a scenery element
-    bcs     drawBoard_base_char
+    cmp     #3  ;5/255 chance of being a GRASS element
+    bcs     drawBoard_rock
     lda     #4  ;TODO randomize what is drawn - these will be something in the first 8-10 characters
+    jmp     drawBoard_to_screen
+
+drawBoard_rock:
+    jsr     prand_newseed
+    cmp     #2  ;2/255 chance of being a ROCK element
+    bcs     drawBoard_enemy_smol
+    lda     #3
+    jmp     drawBoard_to_screen
+
+drawBoard_enemy_smol:
+	jsr     prand_newseed
+	cmp 	#2
+    bcs     drawBoard_base_char
+    lda     #53
     jmp     drawBoard_to_screen
 
 drawBoard_base_char:
@@ -289,9 +344,117 @@ drawBoard_to_screen:
     dec     TEMP1 
     bne     drawBoard_outer
 
-    ;spawn enemies
+    jsr     spawnEnemy
     
 ;move_player_return: ;needed for movePlayer because subroutine is too long to jump to end
+    rts
+    
+;==================================================================
+; spawnEnemy - spawns enemies on each screen
+; 
+
+spawnEnemy:
+
+    jsr     prand_newseed
+    cmp     #254  ; change this 254/255 chance of enemy being spawned, maybe how many enemies are spawned
+    bcs     spawnEnemy_end
+    ;TODO randomize what enemy is spawned
+    lda     #54
+    sta     enemy1_type
+    lda     #4
+    sta     enemy1_y
+    lda     #16
+    sta     enemy1_x
+    lda     #10
+    sta     enemy1_health
+    lda     #40
+    sta     enemy1_speed
+    sta     enemy1_move_clock
+    
+    jsr     move_enemy_cont ;place enemy on screen
+
+spawnEnemy_end:
+    rts
+    
+;TODO: for multiple enemies make this into a struct or array type 
+enemy1_speed:         dc.b 00 ; x jiffys per move. An enemy can move once every x jiffys
+enemy1_move_clock:    dc.b 00 ; the actual timer for the move, reset to speed after each move
+enemy1_type:          dc.b 00
+enemy1_health:        dc.b 00
+enemy1_x:             dc.b 00        
+enemy1_y:             dc.b 00
+enemy1_charunder:     dc.b 00
+
+;==================================================================
+; moveEnemy - moves the player
+; todo could use y register to be thee offset for multiple enemies
+
+moveEnemy:
+
+    lda     #0
+    cmp     enemy1_move_clock
+    bne     move_enemy_end
+    
+    lda     enemy1_speed        ;reset movement points
+    sta     enemy1_move_clock
+
+    pha
+    jsr     isMoveValid ; or integrate into movements? collisions? 
+    bcs     move_enemy_end
+    
+    ;determine if attack
+    
+    ;replace background tile under char
+    ldy     enemy1_y
+    ldx     enemy1_x
+    lda     enemy1_charunder
+    jsr     put_char
+
+    pla
+    
+    ;compute move of enemy
+    ;TODO: smarter ai?
+move_enemy_left:    
+    lda     enemy1_x
+    cmp     PLAYERX
+    bcc     move_enemy_right
+    beq     move_enemy_down
+    dec     enemy1_x
+    jmp     move_enemy_cont
+    
+move_enemy_right: 
+    inc     enemy1_x
+    jmp     move_enemy_cont
+    
+move_enemy_down: 
+    lda     enemy1_y
+    cmp     PLAYERY
+    bcs     move_enemy_up
+    inc     enemy1_y
+    jmp     move_enemy_cont
+    
+move_enemy_up: 
+    lda     enemy1_y
+    cmp     PLAYERY
+    bcc     move_enemy_cont
+    dec     enemy1_y
+    
+move_enemy_cont:
+
+    ;draw enemy in new position
+    ldy     enemy1_y
+    ldx     enemy1_x
+    lda     enemy1_type
+    jsr     put_char
+    sta     enemy1_charunder
+    
+    ;step sound
+    lda     #$a0
+    sta     VOICE1
+    lda     #$2
+    sta     V1DURATION
+
+move_enemy_end:
     rts
     
 ;==================================================================
@@ -323,11 +486,19 @@ move_player_left:
     asl 
     bcc     move_player_right
     dec     PLAYERX
-    
+    sta 	TEMPVAR
+    lda 	#$00
+    sta 	PLAYERDIR
+    lda 	TEMPVAR
+
 move_player_right: 
     asl     
-    bcc    move_player_down
-    inc    PLAYERX
+    bcc    	move_player_down
+    inc    	PLAYERX
+    sta 	TEMPVAR
+    lda 	#$01
+    sta 	PLAYERDIR
+    lda 	TEMPVAR
     
 move_player_down: 
     asl    
@@ -344,7 +515,18 @@ move_player_cont:
     ;draw player in new position
     ldy     PLAYERY
     ldx     PLAYERX
-    lda     #CHAR_PLAYER
+
+    lda 	PLAYERDIR
+    cmp 	#$01
+
+    bne 	move_player_direction_l
+    lda 	#CHAR_PLAYER 				;facing right
+    jmp 	move_player_direction_done
+
+move_player_direction_l:
+    lda     #CHAR_PLAYER_L 				;facing left
+
+move_player_direction_done:
     jsr     put_char
     sta     CHARUNDERPLAYER
     
@@ -519,6 +701,7 @@ pto_add_col:
     
 pto_end:
     rts
+    
 ;==================================================================
 ; put_char - puts character onto screen
 ; a- the character (0-63) to place on screen
@@ -565,7 +748,7 @@ put_char_cont:
     lda     TEMP1           ;return the previous character
 
     rts
-    
+
 ;==================================================================
 ; get_char - puts character onto screen
 ; 
@@ -667,6 +850,7 @@ timer:
     dec     V1DURATION    ; decrement duration of note each jiffy
     dec     V3DURATION    ; decrement duration of note each jiffy
     dec     VNDURATION    ; decrement duration of note each jiffy
+    dec     enemy1_move_clock;
 
 timer_continue:
     lda     JCLOCKL
@@ -775,14 +959,14 @@ melody:   dc.b 207, 201, 195, 207, 201, 195, 195, 195, 195, 195, 201, 201, 201, 
 duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8,   8,  16,  16,  32,  64, 255
 
 ;if space is required move this to cassette buffer or compact to 4 bit colors
-char_color: dc.b 00, 05, 05, 07, 07, 07, 05, 05 ;0-7
+char_color: dc.b 00, 05, 05, 01, 07, 07, 05, 05 ;0-7
             dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;8-15
             dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;16-23
             dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
             dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
             dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
-            dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;48-55
-            dc.b 00, 05, 05, 05, 05, 01, 07, 07 ;56-63
+            dc.b 00, 05, 05, 05, 05, 04, 04, 04 ;48-55
+            dc.b 00, 05, 05, 07, 05, 01, 07, 07 ;56-63
 
     include     "charset.asm"
     
@@ -801,7 +985,10 @@ char_color: dc.b 00, 05, 05, 07, 07, 07, 05, 05 ;0-7
  
     ;initial character under player is blank
     sta     CHARUNDERPLAYER
-    
+ 	
+    ;initial character direction is right (1)
+    sta 	PLAYERDIR
+
     ;music/voice settings
     lda     #$00
     sta     CURRENTNOTE

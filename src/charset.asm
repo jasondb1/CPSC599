@@ -18,10 +18,10 @@ char_set:
 	hex 00 00 00 00 00 00 00 00 ;13
 	hex 00 00 00 00 00 00 00 00 ;14
 	hex 00 00 00 00 00 00 00 00 ;15 - path?
-	hex	00 00 00 ff ff 00 00 00 ;16 - vert line
-	hex	18 18 18 18 18 18 18 18 ;17 - horiz line
+	hex	00 00 00 ff ff 00 00 00 ;16 - horiz line
+	hex	18 18 18 18 18 18 18 18 ;17 - vert line
 	hex 18 18 3c e7 e7 3c 18 18 ;18 - corner
-	hex 00 00 00 00 00 00 00 00 ;19
+	hex ff ff ff ff ff ff ff ff ;19 - solid
 	hex 00 00 00 00 00 00 00 00 ;20
 	hex 00 00 00 00 00 00 00 00 ;21
 	hex 00 00 00 00 00 00 00 00 ;22
@@ -61,8 +61,8 @@ char_set:
 	hex 04 1a 3e d6 bc 58 b0 50 ;56 - griffen ur
 	hex 4f 3f 58 33 12 01 00 00 ;57 - griffen ll
 	hex b0 f8 9c 5e 6b 91 60 00 ;58 - griffen lr
-	hex 00 00 00 00 00 00 00 00 ;59
+	hex 18 2e 18 bc 5a 14 2a 36 ;59 - char 1 hero char left
 	hex 18 24 24 3c 5a 3c 7e 14 ;60 - princess
 	hex 00 00 40 7c f8 40 00 00 ;61 - sword
 	hex 18 24 58 3c 2c 34 5a 36 ;62 - char 1 walk
-	hex	18 74 18 3d 5a 28 54 6c ;63 - char 1 hero char
+	hex	18 74 18 3d 5a 28 54 6c ;63 - char 1 hero char right

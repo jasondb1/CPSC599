@@ -42,9 +42,12 @@ intro_loop:
 ;finished scroll
 
 intro_wait:
+    jsr     timer
+    jsr     playNote ;if music is wanted for intro
     jsr     GETIN       ;keyboard input ends intro right now
     beq     intro_wait
     
+intro_end:
     rts
 
 

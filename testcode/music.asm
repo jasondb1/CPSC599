@@ -94,12 +94,12 @@ COUNTDOWN   equ $FE
     
     dc.w    basicEnd
     dc.w    1234
-    dc.b    $9e, "4112", 0 ;4112 = 0x1010
+    dc.b    $9e, "4109", 0 ;4112 = 0x1010
 
 basicEnd:    dc.w    0
 
     
-    org     $1010
+    org     $100d
 startMl:
     jsr     init
     
