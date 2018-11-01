@@ -14,7 +14,7 @@ move_player_start:
     ldy     PLAYERY
     ldx     PLAYERX
     sty     TEMP2       ;store previous values in case of collission restore
-    stx     TEMP1
+    stx     TEMP3
     
     lda     CHARUNDERPLAYER
     jsr     put_char
@@ -91,7 +91,7 @@ move_player_cont:
     jsr     get_char
     cmp     #16
     bcc     move_player_check_item
-    lda     TEMP1        ;restore last coordinates of player
+    lda     TEMP3        ;restore last coordinates of player
     sta     PLAYERX
     lda     TEMP2
     sta     PLAYERY

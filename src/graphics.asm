@@ -1,5 +1,5 @@
 ;==================================================================
-; update_status - draws the status on the screen
+; update_status - draws the health and gold status on the screen
 
 update_status:
 	;health bars
@@ -50,9 +50,8 @@ update_status:
     
     rts
 
-
 ;==================================================================
-; drawScreen - draws the screen - not the play area
+; drawScreen - draws the health and gold indicators
 drawScreen:
 
 ;clear bottom 2 lines
@@ -70,29 +69,30 @@ drawScreen_loop
     sta     SCREENSTATUS+24
     rts
 
-
 ;==================================================================
 ; drawBoard - draws the play area
 
 drawBoard:
 
+    ;seed for each map sector so maps are consistent
     ldx     MAPX
     ldy     MAPY
     jsr     position_to_offset
     eor     #$6a
     sta     RANDSEED
 
-;TODO - draw random background elements - rocks trees, paths, houses
+    ;load screen and color pointers
     lda     #$1f
-    sta     TEMP_PTR_H
+    sta     CHARPOS_H
     lda     #$97
     sta     COLORMAP_H
     ldy     #$00
-    sty     TEMP_PTR_L
+    sty     CHARPOS_L
     sty     COLORMAP_L
     
-    ldx     #$02            ;this code draws board from bottom offset to top
-    stx     TEMP1
+    ;this code starts at lower right value of the screen and draws upward
+    ldx     #$02            
+    stx     TEMP1                   ;outer loop iterations
     ldy     #$cd 
     jmp     drawBoard_inner
 
@@ -100,18 +100,12 @@ drawBoard_outer:
     ldy     #$ff
 
 drawBoard_inner:
-    ;if random element then
+    ;test for and draw random landscape element
     jsr     prand
-    cmp     #3  ;5/255 chance of being a GRASS element
-    bcs     drawBoard_rock
-    lda     #4  ;TODO randomize what is drawn - these will be something in the first 8-10 characters
-    jmp     drawBoard_to_screen
-
-drawBoard_rock:
-    jsr     prand
-    cmp     #2  ;2/255 chance of being a ROCK element
+    cmp     #5                      ;5/255 chance of being a landscape element
     bcs     drawBoard_base_char
-    lda     #3
+    jsr     prand                   ;randomize which element is drawn
+    and     #06                     ; only allow characters 2-7 to be drawn
     jmp     drawBoard_to_screen
 
 ;default background graphic
@@ -119,22 +113,71 @@ drawBoard_base_char:
     lda     #CHAR_BASE
     
 drawBoard_to_screen:   
-    sta     (TEMP_PTR_L),y
+    sta     (CHARPOS_L),y
     tax
     lda     char_color,x
     sta     (COLORMAP_L),y
     dey
     cpy     #$ff
     bne     drawBoard_inner
+    ;end of inner loop
     
-    dec     TEMP_PTR_H
+    dec     CHARPOS_H
     dec     COLORMAP_H
-    dec     TEMP1 
+    dec     TEMP1               ; this is the counter for outer loop iterations
     bne     drawBoard_outer
-
+    ;end of outer loop
+    
+    ;load map data
+    lda     #<map_data
+    sta     MAP_PTR_L
+    lda     #>map_data
+    sta     MAP_PTR_H
+    ldx     MAPX
+    ldy     MAPY
+    jsr     position_to_offset
+    
+    ;deal with high bit (add high bit offset to h)
+    txa
+    clc
+    adc     MAP_PTR_H
+    sta     MAP_PTR_H
+    
+    lda     (MAP_PTR_L),y  
+    pha 
+    ;draw other board elements like borders, castles houses, etc here
+    jsr     draw_borders
+    pla
+    ;spawn enemies here
     jsr     spawnEnemy
     
-;move_player_return: ;needed for movePlayer because subroutine is too long to jump to end
+    rts
+
+;==================================================================
+; draw_borders
+;
+; a- map info
+;
+
+draw_borders:
+
+    cmp     #$0
+    beq     draw_borders_end
+    
+    ;load screen and color pointers
+    lda     #$1f
+    sta     CHARPOS_H
+    lda     #$97
+    sta     COLORMAP_H
+    ldy     #$00
+    sty     CHARPOS_L
+    sty     COLORMAP_L
+    
+draw_borders_bottom:
+    
+    
+
+draw_borders_end:
     rts
 
 ;==================================================================
@@ -153,7 +196,6 @@ put_char:
     sta     CHARPOS_H
     
     jsr     position_to_offset ; return x is offset_high adder a - offset
-    tay
     
     ;deal with high bit
     cpx     #$1
@@ -200,7 +242,6 @@ get_char:
     sta     CHARPOS_H
     
     jsr     position_to_offset ; return x is offset_high adder a - offset
-    tay
     
     ;deal with high bit
     cpx     #$1

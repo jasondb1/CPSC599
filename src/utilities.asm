@@ -20,10 +20,11 @@ timer:
     dec     V1DURATION    ; decrement duration of note each jiffy
     dec     V3DURATION    ; decrement duration of note each jiffy
     dec     VNDURATION    ; decrement duration of note each jiffy
-    ldx     #4
+    ldx     #NUM_ENEMIES  ; number of enemies
 timer_enemies:    
     dec     enemy_move_clock,x
     dex
+    cpx     #$ff
     bne     timer_enemies
 
 timer_continue:
@@ -165,7 +166,7 @@ cont_rj:
 ; y - the row
 ; x - the col
 ;
-; returns offset_low in a
+; returns offset_low in y and a
 ;         offset_high in x
 position_to_offset:
     
@@ -191,6 +192,7 @@ pto_add_col:
     inx
     
 pto_end:
+    tay
     rts
        
 

@@ -1,16 +1,22 @@
 	org	$1c00
 	
 char_set:
+	;TODO: swap out base charset for different levels?
+	
 	;chars under 16 can be walked over/on
 	hex 00 00 00 00 00 00 00 00 ;0 - blank
 	hex ff 00 ff 00 ff 00 ff 00 ;1 - base landscape
+	
+	; 2 through 7 can be randomly generated
 	hex	3e 6b 7f 6f 36 0c 14 3a ;2 - tree
 	hex	00 00 42 18 18 38 6c b4 ;3 - rock
 	hex	00 00 00 00 00 00 54 38 ;4 - grass
 	hex 00 00 00 00 00 00 00 00 ;5 - stump
 	hex 00 00 00 00 00 00 00 00 ;6 - sign
-	hex 00 00 00 00 00 00 00 00 ;7
-	hex 00 00 00 00 00 00 00 00 ;8
+	hex 00 00 00 00 00 00 00 00 ;7 - something else
+	
+	;other landscape that can be walked on but might have action associated 
+	hex 18 24 24 18 08 38 08 38 ;8 - key
 	hex 00 00 00 00 00 00 00 00 ;9
 	hex 00 00 00 00 00 00 00 00 ;10 - door?
 	hex 00 00 00 00 00 00 00 00 ;11 - cave?
@@ -22,7 +28,7 @@ char_set:
 	hex	18 18 18 18 18 18 18 18 ;17 - vert line
 	hex 18 18 3c e7 e7 3c 18 18 ;18 - corner
 	hex ff ff ff ff ff ff ff ff ;19 - solid
-	hex	3e 6b 7f 6f 36 0c 14 3a ;20 - tree
+	hex	3e 6b 7f 6f 36 0c 14 3a ;20 - tree (border element)
 	hex 00 00 00 00 00 00 00 00 ;21
 	hex 00 00 00 00 00 00 00 00 ;22
 	hex 00 00 00 00 00 00 00 00 ;23

@@ -27,16 +27,17 @@ spawnEnemy:
 
 spawnEnemy_end:
     rts
+    
 
 ;==================================================================
-; moveEnemy - moves the player
-; todo could use y register to be thee offset for multiple enemies
+; moveEnemy - moves the enemy
+;
 ; x is offset of enemy 
 
 moveEnemy:
 
     ldx     #0 ;TODO: use parameter instead of hardcoded enemy
-    stx     TEMP1
+    stx     TEMP_ENEMYNUM
     
     lda     enemy_move_clock,x
     cmp     #0
@@ -45,7 +46,6 @@ moveEnemy:
     lda     enemy_speed,x        ;reset movement points
     sta     enemy_move_clock,x
 
-    pha
     ;jsr     isMoveValid ; or integrate into movements? collisions? 
     ;bcs     move_enemy_end
     
@@ -59,9 +59,7 @@ moveEnemy:
     tax
     pla
     jsr     put_char
-
-    pla
-    ldx     TEMP1
+    ldx     TEMP_ENEMYNUM
     
     ;compute move of enemy
     ;TODO: smarter ai?
@@ -91,7 +89,7 @@ move_enemy_up:
     dec     enemy_y,x
     
 move_enemy_cont:
-    stx     TEMP1; needed for spawn enemies calling subroutine here here
+    stx     TEMP_ENEMYNUM ; needed for spawn enemies calling subroutine here here
     ;draw enemy in new position
     lda     enemy_type,x
     pha
@@ -100,7 +98,7 @@ move_enemy_cont:
     tax
     pla
     jsr     put_char
-    ldx     TEMP1
+    ldx     TEMP_ENEMYNUM
     sta     enemy_charunder,x
     
     ;step sound

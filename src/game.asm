@@ -54,6 +54,7 @@ CHAR_PLAYER     equ #63
 CHAR_PLAYER_L	equ #59
 
 ;enemy related
+NUM_ENEMIES     equ 4 ;(enemies-1 for 0 indexing)
 ENEMY_SMOL		equ #53
 ENEMY_BOSS_UL	equ #55
 ENEMY_BOSS_UR	equ #56
@@ -111,10 +112,11 @@ RANDSEED        equ $8b
 ; User Defined Memory locations
 
 ;#3f-42 - BASIC DATA address
-;CURRENTNOTE     equ $3f ; index value, there are only 255 notes available each note is 2 bytes
-;NOTEDURATION    equ $40
-;NOISEFREQ       equ $41
-;NOISEDURATION   equ $42
+MAP_PTR_L       equ $3f
+MAP_PTR_H       equ $40
+;equ $41
+;equ $42
+
 
 ;possible to use $4e-$53 (misc work area) - these will change if some rom routines called
 ;$4e-53 - misc work area note getin uses (can only use as temp area) 5f?
@@ -124,7 +126,7 @@ TEMP3           equ $50
 TEMP4           equ $51
 TEMP5           equ $52
 TEMP6           equ $53
-TEMP7           equ $54
+TEMP_ENEMYNUM   equ $54
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
@@ -147,25 +149,26 @@ TEMP_PTR_L      equ $F7
 TEMP_PTR_H      equ $F8
 COLORMAP_L      equ $F9
 COLORMAP_H      equ $FA 
-
-CHARPOS_L     equ $FB ; actual screen address of player keeps track of player 
-CHARPOS_H     equ $FC ; and serves as a pointer where to place graphic character of player
+CHARPOS_L       equ $FB 
+CHARPOS_H       equ $FC 
 
 PREVJIFFY       equ $FD
 COUNTDOWN       equ $FE
 
 ;$26-2A product area for multiplication
+
+
+
 ;033c-03fb - casette buffer area
 
 ;nonzpage 0293-029e (rs232 storage)
-PLAYERSECTOR    equ $0293   ;the sector where the player is (keeps track of where in the
-                            ;      world the player is)
-CHARUNDERPLAYER equ $0294 ; 
-COLORUNDERPLAYER equ $0295 ; 
-PLAYERHEALTH    equ $0296 ;
-PLAYERGOLD      equ $0297 ;
-PLAYERY         equ $0298 ;
-PLAYERX         equ $0299 ;
+PLAYERKEY       equ $0293  
+PLAYERUNUSED    equ $0294
+CHARUNDERPLAYER equ $0295 
+PLAYERHEALTH    equ $0296 
+PLAYERGOLD      equ $0297 
+PLAYERY         equ $0298 
+PLAYERX         equ $0299 
 PLAYERDIR		equ	$029a
 
 MAPX            equ $029b;
@@ -193,54 +196,8 @@ basicEnd:    dc.w    0
 init:
     ;basic init is in screen memory to save memory
     ;initialization loaded into graphic memory and written over after
-
-	;org	$1e00  
-
-    ;set border/screen color
-    lda     #8
-    sta     $900f
     
-    ;set timerresolution 1 jiffy
-    lda     #$01
-    sta     TIMERRESOLUTION
-    sta     JOY1_DDRA
- 
-    ;initial character under player is blank
-    sta     CHARUNDERPLAYER
- 	
-    ;initial character direction is right (1)
-    sta 	PLAYERDIR
-
-    ;music/voice settings
-    lda     #$00
-    sta     CURRENTNOTE
-    sta     NOTEDURATION
-    sta     PREVJIFFY
-    sta     GAMEOVER
-    sta     PLAYERGOLD
-    
-    ;define character starting postion
-
-    ;initial player 
-    lda     #10
-    sta     PLAYERHEALTH
-    sta     PLAYERY
-    
-    lda     #20
-    sta     PLAYERX
-
-    
-    ;reset delay
-    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
-    sta     COUNTDOWN
-    
-    ;initial volume
-    lda     #$0f
-    sta     VOLUME
-    
-    clc
-    jmp     init_return
-    ;jmp     $1e00
+    jmp     $1e00
     
     lda     #0
     sta     MAPX
@@ -264,9 +221,9 @@ mainLoop_continue:
         
     ;these events constantly running
     jsr     timer
-    jsr     moveEnemy
-    jsr     playSound
     jsr     playNote
+    jsr     playSound
+    jsr     moveEnemy
     lda     #$0
     cmp     COUNTDOWN
     bne     mainLoop
@@ -277,7 +234,8 @@ mainLoop_continue:
     jsr     readJoy ;movement must be limited
     ;jsr     moveEnemies
    
-    jsr     GETIN       ;keyboard input ends program right now
+    lda     GAMEOVER
+    ;jsr     GETIN       ;keyboard input ends program right now
     beq     mainLoop
     
 ;==================================================================
@@ -296,7 +254,12 @@ finished:
     include     "enemy.asm"
     include     "player.asm"
 
-;variable section
+
+;===================================================================
+; variable section
+;
+; these are here to prevent alignment issues
+;
 enemy_type:           dc.b 00, 00, 00, 00, 00; enemy 0, 1, 2, 3, 4 ... must have equal amounts on all
 enemy_speed:          dc.b 00, 00, 00, 00, 00
 enemy_move_clock:     dc.b 00, 00, 00, 00, 00
@@ -306,14 +269,56 @@ enemy_y:              dc.b 00, 00, 00, 00, 00
 enemy_charunder:      dc.b 00, 00, 00, 00, 00
 
 ;if space is required move this to cassette buffer or compact to 4 bit colors
-char_color: dc.b 00, 05, 05, 01, 07, 07, 05, 05 ;0-7
-            dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;8-15
+char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
+            dc.b 07, 05, 05, 05, 05, 05, 05, 05 ;8-15
             dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;16-23
             dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
             dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
             dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
             dc.b 00, 05, 05, 05, 05, 04, 04, 04 ;48-55
             dc.b 00, 05, 05, 07, 05, 01, 07, 07 ;56-63
+
+;map data - holds exit and other information
+;note maps are 22 screens wide and up to 256 tall
+;upper 4 bits are for exits
+;lower 4 bits are for other information such as if castle is on screen, boss, or other data
+;
+;
+;lower bits:
+; exits set bits 0000 - all 4 sides open, 1111 - all sides closed,  
+; 1000 - left, 0100 - right blocked
+; 0010 - down, 0001 - up    blocked
+;
+;upper bits:
+;f - spawn boss (do not spawn enemies)
+;e 
+;d - 
+;c -
+;b 
+;a
+;9 - draw dungeon entrance
+;8 - draw castle
+; spawn enemies as normal <8
+;7 - draw house/hut
+;6 
+;5
+;4 - spawn key
+;3 - 
+;2 - 
+;1 - 
+;0 - Spawn enemies as normal
+
+;starts at bottom left of forest map
+map_data: 
+    dc.b    $a4, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60
+    dc.b    $80, $08, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50
+;top of forestmap
 
 
 ;           TABLE OF MUSICAL NOTES
@@ -365,4 +370,54 @@ melody:   dc.b 207, 201, 195, 207, 201, 195, 195, 195, 195, 195, 201, 201, 201, 
 duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8,   8,  16,  16,  32,  64, 255
 
 
+;must go last because the address is after all of this code
     include     "charset.asm"
+
+
+;these init values will get overwritten once game starts
+	org	$1e00  
+
+    ;set border/screen color
+    lda     #8
+    sta     $900f
+    
+    ;set timerresolution 1 jiffy
+    lda     #$01
+    sta     TIMERRESOLUTION
+    sta     JOY1_DDRA
+ 
+    ;initial character under player is blank
+    sta     CHARUNDERPLAYER
+ 	
+    ;initial character direction is right (1)
+    sta 	PLAYERDIR
+
+    ;music/voice settings
+    lda     #$00
+    sta     CURRENTNOTE
+    sta     NOTEDURATION
+    sta     PREVJIFFY
+    sta     GAMEOVER
+    sta     PLAYERGOLD
+    
+    ;define character starting postion
+
+    ;initial player 
+    lda     #10
+    sta     PLAYERHEALTH
+    sta     PLAYERY
+    
+    lda     #20
+    sta     PLAYERX
+
+    
+    ;reset delay
+    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    sta     COUNTDOWN
+    
+    ;initial volume
+    lda     #$0f
+    sta     VOLUME
+    
+    clc
+    jmp     init_return
