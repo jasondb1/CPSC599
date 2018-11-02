@@ -99,7 +99,7 @@ drawBoard_border_left:
     lda     #$20
     bit     TEMP10
     sty     BORDERLEFT
-    bne     drawBoard_border_right
+    bpl     drawBoard_border_right
     stx     BORDERLEFT
 
 drawBoard_border_right:
@@ -156,15 +156,46 @@ drawBoard_inner:
     lda     TEMP21
     cmp     #SCREENTOP + 2
     bcs     drawBoard_test_border_bottom
+    
+    ;if first 2 or last 2 cols - draw border pieces so all corners are borders
+    lda     TEMP20
+    cmp     #SCREENLEFT + 2
+    bcs     drawBoard_test_border_top_cont
+    lda     #CHAR_BORDER
+    bcc     drawBoard_to_screen
+
+drawBoard_test_border_top_cont:
+    ;lda     TEMP20
+    cmp     #SCREENRIGHT - 1
+    bcc     drawBoard_test_border_top_cont1
+    lda     #CHAR_BORDER
+    bcs     drawBoard_to_screen
+    
+drawBoard_test_border_top_cont1:        
     lda     BORDERTOP
     bcc     drawBoard_to_screen
     
 drawBoard_test_border_bottom:
-    ;lda     TEMP21
+    lda     TEMP21
     cmp     #SCREENBOTTOM - 1
     bcc     drawBoard_test_border_left
-    lda     BORDERBOTTOM
+    ;if first 2 or last 2 cols - draw border
+    lda     TEMP20
+    cmp     #SCREENLEFT + 2
+    bcs     drawBoard_test_border_bottom_cont
+    lda     #CHAR_BORDER
+    bcc     drawBoard_to_screen
+
+drawBoard_test_border_bottom_cont:
+    ;lda     TEMP20
+    cmp     #SCREENRIGHT - 1
+    bcc     drawBoard_test_border_bottom_cont1
+    lda     #CHAR_BORDER
     bcs     drawBoard_to_screen
+    
+drawBoard_test_border_bottom_cont1:            
+    lda     BORDERBOTTOM
+    bcc     drawBoard_to_screen
 
 drawBoard_test_border_left:
     lda     TEMP20
