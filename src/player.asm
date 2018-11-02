@@ -62,7 +62,7 @@ move_player_down:
     ldy     #SCREENBOTTOM+1
     cpy     PLAYERY
     bne     move_player_up
-    dec     MAPY
+    inc     MAPY
     ldy     #SCREENTOP
     sty     PLAYERY
     jmp     move_player_draw_board
@@ -76,7 +76,7 @@ move_player_up:
     ldy     #SCREENTOP-1
     cpy     PLAYERY
     bne     move_player_cont
-    inc     MAPY
+    dec     MAPY
     ldy     #SCREENBOTTOM
     sty     PLAYERY
 

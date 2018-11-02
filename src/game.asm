@@ -52,6 +52,7 @@ CHAR_BLANK      equ #00
 CHAR_BASE       equ #01
 CHAR_PLAYER     equ #63
 CHAR_PLAYER_L	equ #59
+CHAR_BORDER     equ #20
 
 ;enemy related
 NUM_ENEMIES     equ 4 ;(enemies-1 for 0 indexing)
@@ -111,9 +112,16 @@ RANDSEED        equ $8b
 ;===================================================================
 ; User Defined Memory locations
 
+;$26-2A product area for multiplication
+TEMP10           equ $26
+BORDERTOP        equ $27
+BORDERBOTTOM     equ $28
+BORDERLEFT       equ $29
+BORDERRIGHT      equ $2a
+
 ;#3f-42 - BASIC DATA address
-MAP_PTR_L       equ $3f
-MAP_PTR_H       equ $40
+MAP_PTR_L        equ $3f
+MAP_PTR_H        equ $40
 ;equ $41
 ;equ $42
 
@@ -123,10 +131,9 @@ MAP_PTR_H       equ $40
 TEMP1           equ $4e
 TEMP2           equ $4f
 TEMP3           equ $50
-TEMP4           equ $51
-TEMP5           equ $52
-TEMP6           equ $53
-TEMP_ENEMYNUM   equ $54
+TEMP20           equ $51
+TEMP21           equ $52
+TEMP_ENEMYNUM   equ $53
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
@@ -155,15 +162,13 @@ CHARPOS_H       equ $FC
 PREVJIFFY       equ $FD
 COUNTDOWN       equ $FE
 
-;$26-2A product area for multiplication
-
-
 
 ;033c-03fb - casette buffer area
+;feed in from graphic memory if neeeded
 
 ;nonzpage 0293-029e (rs232 storage)
-PLAYERKEY       equ $0293  
-PLAYERUNUSED    equ $0294
+PLAYERHASKEY       equ $0293  
+PLAYERWEAPONDAMAGE equ $0294
 CHARUNDERPLAYER equ $0295 
 PLAYERHEALTH    equ $0296 
 PLAYERGOLD      equ $0297 
@@ -198,14 +203,12 @@ init:
     ;initialization loaded into graphic memory and written over after
     
     jmp     $1e00
-    
-    lda     #0
+    include     "intro.asm"
+
+init_return:
+    lda     #1
     sta     MAPX
     sta     MAPY
-    
-    include     "intro.asm"
- 
-init_return:
     ;jsr     intro
     
     ;set custom character set
@@ -220,10 +223,11 @@ mainLoop:
 mainLoop_continue:
         
     ;these events constantly running
-    jsr     timer
+
     jsr     playNote
     jsr     playSound
     jsr     moveEnemy
+    jsr     timer
     lda     #$0
     cmp     COUNTDOWN
     bne     mainLoop
@@ -231,8 +235,7 @@ mainLoop_continue:
     ;events related to timer only every 10/60 second change this as required
     lda     #10
     sta     COUNTDOWN
-    jsr     readJoy ;movement must be limited
-    ;jsr     moveEnemies
+    jsr     readJoy             ;player movement must be limited
    
     lda     GAMEOVER
     ;jsr     GETIN       ;keyboard input ends program right now
@@ -308,16 +311,16 @@ char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
 ;1 - 
 ;0 - Spawn enemies as normal
 
-;starts at bottom left of forest map
+;starts at top left of forest map, at square 1
 map_data: 
-    dc.b    $a4, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60
-    dc.b    $80, $08, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50
+    dc.b    $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50
+    dc.b    $80, $08, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $a4, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60
 ;top of forestmap
 
 
