@@ -85,20 +85,20 @@ move_player_draw_board:
     
 move_player_cont:
 
-    ;check what is under the player if > 16 then reload previous values in temp1 and temp2
+    ;check what is under the player if > 16 then reload previous values in temp3 and temp2
     ldy     PLAYERY
     ldx     PLAYERX
     jsr     get_char
     cmp     #16
-    bcc     move_player_check_item
+    bcc     move_player_check_items
     lda     TEMP3        ;restore last coordinates of player
     sta     PLAYERX
     lda     TEMP2
     sta     PLAYERY
-
-move_player_check_item:
-    ;check if coin or other
+    bcs     move_player_draw_char
     
+move_player_check_items:
+    jsr     check_items
 
 move_player_draw_char:
     ;draw player in new position
@@ -128,4 +128,91 @@ move_player_direction_done:
     jsr     update_status
 
 move_player_end:
+    rts
+
+
+;==================================================================
+; check_items - deals with items under the player
+; a - the character under the player
+;
+check_items:
+check_items_check_item1:
+    ;is it the castle door?
+    cmp     #10
+    bne     check_items_item2
+    
+    ;TODO: check if player has key
+    lda     PLAYERHASKEY
+    beq     check_items_end
+    lda     #4
+    sta     PLAYERX
+    sta     PLAYERY
+    lda     #MAP_START_LEVEL2_X
+    sta     MAPX
+    lda     #MAP_START_LEVEL2_Y
+    sta     MAPY
+    dec     PLAYERHASKEY
+    jsr     drawBoard           ;redraw the board
+    jmp     check_items_end
+    
+check_items_item2:
+    ;is it the dungeon door?
+    cmp     #11
+    bne     check_items_item3
+    
+    ;TODO: check if player has key
+    lda     PLAYERHASKEY
+    beq     check_items_end
+    lda     #4
+    sta     PLAYERX
+    sta     PLAYERY
+    lda     #MAP_START_LEVEL3_X
+    sta     MAPX
+    lda     #MAP_START_LEVEL3_Y
+    sta     MAPY
+    dec     PLAYERHASKEY
+    jsr     drawBoard           ;redraw the board
+    jmp     check_items_end
+    
+check_items_item3:
+    ;is it the key?
+    cmp     #8
+    bne     check_items_item4
+    ;TODO: pick up key
+    jsr     replace_base_char
+    inc     PLAYERHASKEY
+    
+check_items_item4:
+    ;found weapon
+    cmp     #8
+    bne     check_items_item5
+    ;TODO: pickup weapon and increase/decrease damage
+    
+check_items_item5:
+    ;found gold
+    cmp     #14
+    bne     check_items_item6
+    ;TODO: pickup gold and increase score
+    
+check_items_item6:
+    ;found bbq
+    cmp     #9
+    bne     check_items_end
+    ;TODO: pickup gold and increase score
+    lda     #1
+    sta     GAMEOVER
+    
+check_items_end:
+    rts
+
+
+;==================================================================
+; replace_base_char - replace character under character to base character
+;
+replace_base_char:
+    lda     #CHAR_BASE
+    ldx     PLAYERX
+    ldy     PLAYERY
+    jsr     put_char
+    
     rts

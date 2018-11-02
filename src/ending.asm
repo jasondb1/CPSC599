@@ -1,9 +1,6 @@
 
 intro:
 
-    lda     #240
-    sta     CHARSETSELECT
-
     ;clear screen
     lda     #$93
     jsr     CHROUT
@@ -26,9 +23,8 @@ intro_next_char:
 
 intro_loop:       
     ;animation timer
-    jsr     playNote ;if music is wanted for intro
-    jsr     playSound
     jsr     timer
+    jsr     playNote ;if music is wanted for intro
     lda     #$0
     cmp     COUNTDOWN
     bne     intro_loop

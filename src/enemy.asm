@@ -6,11 +6,12 @@
 
 spawnEnemy:
 
+    stx     TEMP_ENEMYNUM
     jsr     prand_newseed
     cmp     #254  ; change this 254/255 chance of enemy being spawned, maybe how many enemies are spawned
     bcs     spawnEnemy_end
     ;TODO randomize what enemy is spawned
-    ldx     #0          ; hard code in enemy 0 right now TODO: use x from parameters
+    ldx     TEMP_ENEMYNUM
     
     lda     #54
     sta     enemy_type,x
@@ -36,32 +37,32 @@ spawnEnemy_end:
 
 moveEnemy:
 
-    ldx     #0 ;TODO: use parameter instead of hardcoded enemy
     stx     TEMP_ENEMYNUM
     
     lda     enemy_move_clock,x
     cmp     #0
-    bne     move_enemy_end
+    beq     move_enemy_begin
+    rts
     
+move_enemy_begin:    
     lda     enemy_speed,x        ;reset movement points
     sta     enemy_move_clock,x
-
-    ;jsr     isMoveValid ; or integrate into movements? collisions? 
-    ;bcs     move_enemy_end
     
-    ;determine if attack
+    ;TODO: determine if enemy attacks
     
     ;replace background tile under char
     lda     enemy_charunder,x
     pha
     ldy     enemy_y,x
     lda     enemy_x,x
+    sty     TEMP2       ;store previous values in case of collision restore
+    sta     TEMP3
     tax
     pla
     jsr     put_char
     ldx     TEMP_ENEMYNUM
     
-    ;compute move of enemy
+    ;compute move of enemy - a dumb goto the player ai
     ;TODO: smarter ai?
 move_enemy_left:    
     lda     enemy_x,x
@@ -89,7 +90,25 @@ move_enemy_up:
     dec     enemy_y,x
     
 move_enemy_cont:
-    stx     TEMP_ENEMYNUM ; needed for spawn enemies calling subroutine here here
+
+    stx     TEMP_ENEMYNUM ; needed for spawn enemies calling subroutine here
+    
+    ;collision check
+    ;check what is under the player if > 16 then reload previous values in temp3 and temp2
+    ldy     enemy_y,x
+    lda     enemy_x,x
+    tax
+    jsr     get_char
+    cmp     #16
+    bcc     move_enemy_cont1
+    ldx     TEMP_ENEMYNUM
+    lda     TEMP3        ;restore last coordinates of player
+    sta     enemy_x,x
+    lda     TEMP2
+    sta     enemy_y,x
+    bcs     move_enemy_cont1
+
+move_enemy_cont1:
     ;draw enemy in new position
     lda     enemy_type,x
     pha

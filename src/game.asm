@@ -55,7 +55,7 @@ CHAR_PLAYER_L	equ #59
 CHAR_BORDER     equ #20
 
 ;enemy related
-NUM_ENEMIES     equ 4 ;(enemies-1 for 0 indexing)
+NUM_ENEMIES     equ #4 ;(enemies-1 for 0 indexing)
 ENEMY_SMOL		equ #53
 ENEMY_BOSS_UL	equ #55
 ENEMY_BOSS_UR	equ #56
@@ -63,22 +63,29 @@ ENEMY_BOSS_LL	equ #57
 ENEMY_BOSS_LR	equ #58
 
 ;movement related
-UP              equ $10
-DOWN            equ $20
-RIGHT           equ $40
-LEFT            equ $80
+UP              equ #$10
+DOWN            equ #$20
+RIGHT           equ #$40
+LEFT            equ #$80
+
+MAP_START_LEVEL1_X  equ #1
+MAP_START_LEVEL1_Y  equ #1
+MAP_START_LEVEL2_X  equ #6
+MAP_START_LEVEL2_Y  equ #12
+MAP_START_LEVEL3_X  equ #19
+MAP_START_LEVEL3_Y  equ #14
+
 
 ;==================================================================
 ;Colors
-COLORREG        equ 646
-BLACK           equ 0
-WHITE           equ 1
-RED             equ 2
-CYAN            equ 3
-PURPLE          equ 4
-GREEN           equ 5
-BLUE            equ 6
-YELLOW          equ 7
+BLACK           equ #0
+WHITE           equ #1
+RED             equ #2
+CYAN            equ #3
+PURPLE          equ #4
+GREEN           equ #5
+BLUE            equ #6
+YELLOW          equ #7
 
 ;===================================================================
 ; Defined Memory locations
@@ -96,6 +103,7 @@ SCREENMAP       equ $1e00
 SCREENSTATUS    equ $1fcd
 COLORMAP        equ $9600
 COLORMAPSTATUS  equ $97cd
+COLORREG        equ 646
 
 VOICE1          equ $900a
 VOICE2          equ $900b
@@ -203,20 +211,21 @@ init:
     ;initialization loaded into graphic memory and written over after
     
     jmp     $1e00
-    include     "intro.asm"
+    include     "scroll_screen.asm"
 
 init_return:
-    lda     #1
+    lda     #MAP_START_LEVEL1_X
     sta     MAPX
+    lda     #MAP_START_LEVEL1_Y
     sta     MAPY
-    ;jsr     intro
+    jsr     intro
     
     ;set custom character set
     lda     #$ff
     sta     CHARSETSELECT
     
     jsr     drawBoard
-    jsr     drawScreen ;maybe scrap this?
+    jsr     drawScreen
     jsr     move_player_cont
 
 mainLoop:
@@ -226,6 +235,7 @@ mainLoop_continue:
 
     jsr     playNote
     jsr     playSound
+    ldx     #0          ;move enemy 0 TODO: move all enemies
     jsr     moveEnemy
     jsr     timer
     lda     #$0
@@ -241,6 +251,9 @@ mainLoop_continue:
     ;jsr     GETIN       ;keyboard input ends program right now
     beq     mainLoop
     
+;TODO: game Over
+    jsr     ending
+    
 ;==================================================================
 ; finished - cleanup and end
 finished:
@@ -253,7 +266,7 @@ finished:
     rts
 
     include     "graphics.asm"
-    include     "utilities.asm"
+    include     "toolkit.asm"
     include     "enemy.asm"
     include     "player.asm"
 
@@ -263,6 +276,8 @@ finished:
 ;
 ; these are here to prevent alignment issues
 ;
+
+;enemy status arrays
 enemy_type:           dc.b 00, 00, 00, 00, 00; enemy 0, 1, 2, 3, 4 ... must have equal amounts on all
 enemy_speed:          dc.b 00, 00, 00, 00, 00
 enemy_move_clock:     dc.b 00, 00, 00, 00, 00
@@ -271,10 +286,38 @@ enemy_x:              dc.b 00, 00, 00, 00, 00
 enemy_y:              dc.b 00, 00, 00, 00, 00
 enemy_charunder:      dc.b 00, 00, 00, 00, 00
 
+;title and ending text
+;text limited to 255 chars long
+title_text:
+          dc.b    "WITCHER 0.3", $0d, $0d   ;13
+          dc.b    "P BOROWOY", $0d          ;10
+          dc.b    "J DEBOER", $0d           ;9
+          dc.b    "A MCALLISTER", $0d       ;13
+          dc.b    "J WILSON", $0d ,$00          ;9 54 total chars
+          
+ending_text:
+          dc.b    "YOU RETRIEVE THE", $0d
+          dc.b    "SMOULDERING BBQ", $0d, $0d
+          dc.b    "YOUR STEAK IS RUINED!", $0d, $0d      
+          dc.b    "YOU ARE MAD!", $0d          
+          dc.b    $0d       
+          dc.b    "THE END.", $0d ,$00          
+
+;==================================================================
+;Colors
+;BLACK           equ #0
+;WHITE           equ #1
+;RED             equ #2
+;CYAN            equ #3
+;PURPLE          equ #4
+;GREEN           equ #5
+;BLUE            equ #6
+;YELLOW          equ #7
+
 ;if space is required move this to cassette buffer or compact to 4 bit colors
 char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
-            dc.b 07, 05, 05, 05, 05, 05, 05, 05 ;8-15
-            dc.b 00, 05, 05, 05, 05, 05, 05, 05 ;16-23
+            dc.b 07, 02, 01, 01, 05, 05, 05, 05 ;8-15
+            dc.b 00, 05, 05, 05, 05, 03, 05, 05 ;16-23
             dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
             dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
             dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
@@ -283,15 +326,33 @@ char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
 
 ;map data - holds exit and other information
 ;note maps are 22 screens wide and up to 256 tall
+;
+;
+;
+;note: make sure adjacent tiles have matching borders
+;  ex: if border is on right make sure tile to right has border on left
+;      or the player might get trapped in the border
+;
 ;upper 4 bits are for exits
 ;lower 4 bits are for other information such as if castle is on screen, boss, or other data
 ;
 ;
 ;lower bits:
 ; exits set bits 0000 - all 4 sides open, 1111 - all sides closed,  
-; 1000 - left, 0100 - right blocked
-; 0010 - down, 0001 - up    blocked
+; $8-L, $4-R, $2-B $1-T    BORDER SIDES BITS to set
+; $f - all sides (maybe useful for a pit or boss?
 ;
+;basic borders
+; $9 TL, $1 T, $5 TR
+; $8 L ,     , $4 R
+; $A BL, $2 B, $6 BR
+;
+;2 sides opposing borders
+; $C LR; $3 BT
+;
+; 3 sides
+; $D - Opening Bottom; $E - Opening Top; $7 - Opening Left; $B - Opening Right
+
 ;upper bits:
 ;f - spawn boss (do not spawn enemies)
 ;e 
@@ -304,25 +365,36 @@ char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
 ; spawn enemies as normal <8
 ;7 - draw house/hut
 ;6 
-;5
+;5 - spawn bbq
 ;4 - spawn key
 ;3 - 
 ;2 - 
 ;1 - 
 ;0 - Spawn enemies as normal
 
-;starts at top left of forest map, at square 1
-map_data: 
+;starts at top left of map, can partition into other areas, just adjust map position
+; must be 22 wide
+; forest: 1,1 thru 13,8
+; castle: 1,9 thru 13,16
+map_data: ;                                                  <<<  forest    |  dungeon >>
 ;             1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20   21   22
-    dc.b    $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50
-    dc.b    $80, $08, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $a0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60
-;top of forestmap
+    dc.b    $D4, $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50, $90, $10, $10, $10, $10, $10, $15, $10, $50
+    dc.b    $C0, $88, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $A0, $60, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $90, $10, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $a0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60, $80, $00, $00, $00, $00, $00, $00, $00, $40
+; ------forest ^^^  town vvv   
+    dc.b    $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $04, $09, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $a0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60, $a0, $20, $20, $20, $20, $20, $20, $20, $60
 
 
 ;           TABLE OF MUSICAL NOTES

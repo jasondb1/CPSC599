@@ -5,39 +5,39 @@ char_set:
 	
 	;chars under 16 can be walked over/on
 	hex 00 00 00 00 00 00 00 00 ;0 - blank
-	hex ff 00 ff 00 ff 00 ff 00 ;1 - base landscape
+	hex 00 10 00 40 04 00 02 00 ;1 - base landscape
 	
 	; 2 through 7 can be randomly generated
-	hex	3e 6b 7f 6f 36 0c 14 3a ;2 - tree
+	hex	3e 6b 7f 6f 36 0c 14 3a ;2 - tree? maybe not necessary with tree border
 	hex	00 00 42 18 18 38 6c b4 ;3 - rock
 	hex	00 00 00 00 00 00 54 38 ;4 - grass
-	hex 00 00 00 00 00 00 00 00 ;5 - stump
-	hex 00 00 00 00 00 00 00 00 ;6 - sign
-	hex 00 00 00 00 00 00 00 00 ;7 - something else
+	hex 00 00 00 00 00 00 00 00 ;5 - stump?
+	hex 00 00 00 00 00 00 00 00 ;6 - sign?
+	hex 00 00 00 00 00 00 00 00 ;7 - vines?
 	
 	;other landscape that can be walked on but might have action associated 
 	hex 18 24 24 18 08 38 08 38 ;8 - key
-	hex 00 00 00 00 00 00 00 00 ;9
-	hex 00 00 00 00 00 00 00 00 ;10 - door?
-	hex 00 00 00 00 00 00 00 00 ;11 - cave?
-	hex 00 00 00 00 00 00 00 00 ;12 - 
-	hex 00 00 00 00 00 00 00 00 ;13
+    hex 00 52 29 52 29 ff ff 42 ;9 - bbq
+	hex 00 18 3c 7e 7e 7e 7e 7e ;10 - door
+	hex 00 18 3c 7e 7e 7e 7e 7e ;11 - dungeon door
+	hex aa 55 aa 55 aa 55 aa 55 ;12 - 
+	hex aa 55 aa 55 aa 55 aa 55 ;13 - 
 	hex 00 3c 7e 7e 7e 7e 3c 00 ;14 - coin
-	hex 00 00 00 00 00 00 00 00 ;15 - path?
+	hex aa 55 aa 55 aa 55 aa 55 ;15 - path?
 	hex	00 00 00 ff ff 00 00 00 ;16 - horiz line
 	hex	18 18 18 18 18 18 18 18 ;17 - vert line
 	hex 18 18 3c e7 e7 3c 18 18 ;18 - corner
 	hex ff ff ff ff ff ff ff ff ;19 - solid
 	hex	3e 6b 7f 6f 36 0c 14 3a ;20 - tree (border element)
-	hex 00 00 00 00 00 00 00 00 ;21
-	hex 00 00 00 00 00 00 00 00 ;22
-	hex 00 00 00 00 00 00 00 00 ;23
-	hex 00 00 00 00 00 00 00 00 ;24
-	hex 00 00 00 00 00 00 00 00 ;25
-	hex 00 00 00 00 00 00 00 00 ;26
-	hex 00 00 00 00 00 00 00 00 ;27
-	hex 00 00 00 00 00 00 00 00 ;28
-	hex 00 00 00 00 00 00 00 00 ;29
+	hex aa 55 aa 55 aa 55 aa 55 ;21 - castle tower
+	hex aa 55 aa 55 aa 55 aa 55 ;22 - flag?
+	hex aa 55 aa 55 aa 55 aa 55 ;23
+	hex aa 55 aa 55 aa 55 aa 55 ;24
+	hex aa 55 aa 55 aa 55 aa 55 ;25
+	hex aa 55 aa 55 aa 55 aa 55 ;26
+	hex aa 55 aa 55 aa 55 aa 55 ;27
+	hex aa 55 aa 55 aa 55 aa 55 ;28
+	hex aa 55 aa 55 aa 55 aa 55 ;29
 	hex 3c 42 46 5a 62 42 3c 00 ;30 - 0
 	hex 08 18 28 08 08 08 3e 00 ;31 - 1
 	hex 3c 42 02 0c 30 40 7e 00 ;32 - 2
@@ -51,16 +51,16 @@ char_set:
 	hex 00 18 18 7e 7e 18 18 00 ;40 - +
 	hex 00 00 00 00 00 00 00 00 ;41 - 
 	hex 09 a2 2c 7c 5e 76 3c 84 ;42 - splat (when char hit?)
-	hex 00 00 00 00 00 00 00 00 ;43
-	hex 00 00 00 00 00 00 00 00 ;44
-	hex 00 00 00 00 00 00 00 00 ;45
-	hex 00 00 00 00 00 00 00 00 ;46
-	hex 00 00 00 00 00 00 00 00 ;47
-	hex 00 00 00 00 00 00 00 00 ;48
-	hex 00 00 00 00 00 00 00 00 ;49
-	hex 00 00 00 00 00 00 00 00 ;50
-	hex 00 00 00 00 00 00 00 00 ;51
-	hex 00 00 00 00 00 00 00 00 ;52
+	hex aa 55 aa 55 aa 55 aa 55 ;43
+	hex aa 55 aa 55 aa 55 aa 55 ;44
+	hex aa 55 aa 55 aa 55 aa 55 ;45
+	hex aa 55 aa 55 aa 55 aa 55 ;46
+	hex aa 55 aa 55 aa 55 aa 55 ;47
+	hex aa 55 aa 55 aa 55 aa 55 ;48
+	hex aa 55 aa 55 aa 55 aa 55 ;49
+	hex aa 55 aa 55 aa 55 aa 55 ;50
+	hex aa 55 aa 55 aa 55 aa 55 ;51
+	hex aa 55 aa 55 aa 55 aa 55 ;52
 	hex 42 24 5a 3c 3c da 1a 24 ;53 - small creature
 	hex 80 98 a4 db f7 5b 18 34 ;54 - swordsman
 	hex 00 00 10 38 7f dd fe 0d ;55 - griffen ul

@@ -1,6 +1,6 @@
 
 intro:
-
+ending:
     lda     #240
     sta     CHARSETSELECT
 
@@ -16,13 +16,22 @@ intro:
     sta     646
     
     ;display text
-    ldy     #00
-intro_next_char:
-    lda     title,y
-    jsr     CHROUT
-    iny
-    cpy     #54
-    bne     intro_next_char
+    lda     GAMEOVER
+    bne     intro_game_over
+    lda     #<title_text
+    ldx     #>title_text
+    jmp     intro_display_text
+
+intro_game_over:
+    lda     #<ending_text
+    ldx     #>ending_text
+    
+    
+intro_display_text:
+    sta     TEMP_PTR_L
+    stx     TEMP_PTR_H
+
+    jsr     display_text
 
 intro_loop:       
     ;animation timer

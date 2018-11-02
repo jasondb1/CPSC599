@@ -2,6 +2,19 @@
 ; update_status - draws the health and gold status on the screen
 
 update_status:
+
+    ;TODO routine to print numbers such as gold
+    ;TODO display weapon???
+    
+    ;key icon
+    lda     PLAYERHASKEY
+    beq     update_status_cont1
+    lda     #8
+    sta     SCREENSTATUS + 32
+    lda     #YELLOW
+    sta     COLORMAPSTATUS + 32
+    
+update_status_cont1:
 	;health bars
 	lda		#19
 	sta		SCREENSTATUS+4
@@ -37,7 +50,8 @@ update_status:
 	lda		#GREEN
 	sta		COLORMAPSTATUS+8
     
-    ;map position (for debugging)
+    
+    ;map position (for debugging) does not >9 correctly
     ;map x 
     clc
     lda     #30
@@ -97,7 +111,7 @@ drawBoard:
 ;load character for border
 drawBoard_border_left:
     lda     #$20
-    bit     TEMP10
+    bit     TEMP10      ;map data
     sty     BORDERLEFT
     bpl     drawBoard_border_right
     stx     BORDERLEFT
@@ -138,12 +152,12 @@ drawBoard_cont1:
     
     ;this code starts at lower right value of the screen and draws upward
     lda     #SCREENBOTTOM
-    sta     TEMP21                  ;keeps track of row (for bottom and top borders)
+    sta     TEMP21                 ;keeps track of row (for bottom and top borders)
     lda     #SCREENRIGHT
     sta     TEMP20                 ;count the columns (for detecting left/right borders)
     
     ldx     #$02            
-    stx     TEMP1                   ;outer loop iterations
+    stx     TEMP1                  ;outer loop iterations
     ldy     #$cd 
     jmp     drawBoard_inner
 
@@ -153,19 +167,18 @@ drawBoard_outer:
 drawBoard_inner:
     
     ;test for borders
-    lda     TEMP21
+    lda     TEMP21              ;row
     cmp     #SCREENTOP + 2
     bcs     drawBoard_test_border_bottom
     
     ;if first 2 or last 2 cols - draw border pieces so all corners are borders
-    lda     TEMP20
+    lda     TEMP20              ;column
     cmp     #SCREENLEFT + 2
     bcs     drawBoard_test_border_top_cont
     lda     #CHAR_BORDER
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_top_cont:
-    ;lda     TEMP20
     cmp     #SCREENRIGHT - 1
     bcc     drawBoard_test_border_top_cont1
     lda     #CHAR_BORDER
@@ -176,18 +189,17 @@ drawBoard_test_border_top_cont1:
     bcc     drawBoard_to_screen
     
 drawBoard_test_border_bottom:
-    lda     TEMP21
+    lda     TEMP21              ;row
     cmp     #SCREENBOTTOM - 1
     bcc     drawBoard_test_border_left
     ;if first 2 or last 2 cols - draw border
-    lda     TEMP20
+    lda     TEMP20              ;column
     cmp     #SCREENLEFT + 2
     bcs     drawBoard_test_border_bottom_cont
     lda     #CHAR_BORDER
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_bottom_cont:
-    ;lda     TEMP20
     cmp     #SCREENRIGHT - 1
     bcc     drawBoard_test_border_bottom_cont1
     lda     #CHAR_BORDER
@@ -228,12 +240,12 @@ drawBoard_to_screen:
     tax
     lda     char_color,x
     sta     (COLORMAP_L),y
-    dec     TEMP20                  ;keep track of column
+    dec     TEMP20                  ;column
     bne     drawBoard_inner_cont
     ; if col reaches 0 then reset and dec row
     lda     #SCREENRIGHT
-    sta     TEMP20
-    dec     TEMP21
+    sta     TEMP20                  ;column
+    dec     TEMP21                  ;row
 
 drawBoard_inner_cont:    
     dey
@@ -248,9 +260,81 @@ drawBoard_inner_cont:
     ;end of outer loop
     
     ;draw other board elements like castles houses, etc here
-    ;spawn enemies here
+    lda     #$0f
+    and     TEMP10          ;map data
+    beq     drawBoard_end
+    jsr     draw_other
+    
+drawBoard_end:  
+    ldx     #0  ;TODO: spawn multiple if needed, boss, etc spawn enemy 0
     jsr     spawnEnemy
     
+    rts
+
+;==================================================================
+; put_char - puts character onto screen
+; a- the lower bits of map data
+;
+; returns - nothing
+
+draw_other:
+    
+    sta     TEMP10   ;map data
+    cmp     #$08     ;draw Castle
+    bne     draw_other_dungeon_door
+    ldx     #5      ;column
+    ldy     #6      ;row
+    lda     #21
+    jsr     put_char
+    
+    ldx     #6      ;column
+    ldy     #6      ;row
+    lda     #10
+    jsr     put_char
+    
+    ldx     #7      ;column
+    ldy     #6      ;row
+    lda     #21
+    jsr     put_char
+
+draw_other_dungeon_door:
+    lda     TEMP10   ;map data
+    cmp     #$09     ;draw dungeon entrance
+    bne     draw_other_bbq
+    ldx     #5      ;column
+    ldy     #6      ;row
+    lda     #21
+    jsr     put_char
+    
+    ldx     #6      ;column
+    ldy     #6      ;row
+    lda     #11     ;dungeon door
+    jsr     put_char
+    
+    ldx     #7      ;column
+    ldy     #6      ;rowd $15
+    lda     #21
+    jsr     put_char
+    
+draw_other_bbq:
+    lda     TEMP10   ;map data
+    cmp     #$05     ;draw dungeon entrance
+    bne     draw_other_key
+    ldx     #5      ;column
+    ldy     #6      ;row
+    lda     #9
+    jsr     put_char
+    
+draw_other_key:
+    lda     TEMP10   ;map data
+    cmp     #$04     ;draw dungeon entrance
+    bne     draw_other_end
+    ldx     #5      ;column
+    ldy     #6      ;row
+    lda     #8
+    jsr     put_char
+    
+draw_other_end:
     rts
 
 ;==================================================================

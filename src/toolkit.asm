@@ -156,8 +156,7 @@ test_up:
 cont_rj:
     jsr     movePlayer
     rts
-    
-    
+        
 ;==================================================================
 ; position_to_offset - converts rows and columns to offset
 ;
@@ -195,7 +194,6 @@ pto_end:
     tay
     rts
        
-
 ;==================================================================
 ; prand - simple linear feedback prng
 ; if more randomness is required seed with something related to player input
@@ -259,4 +257,22 @@ prand_end:
 loop_kw:
     jsr     GETIN
     beq     loop_kw
+    rts
+
+;==================================================================
+; display_text - displays the text in TEMP_PTR_L
+; strings are currently terminated with $00
+; 
+    
+display_text:
+
+    ldy     #00
+display_text_next_char:
+    lda     (TEMP_PTR_L),y
+    beq     display_text_end
+    jsr     CHROUT
+    iny
+    bne     display_text_next_char
+
+display_text_end:
     rts
