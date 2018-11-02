@@ -6,50 +6,36 @@ update_status:
     ;TODO routine to print numbers such as gold
     ;TODO display weapon???
     
-    ;key icon
+    ;key icon 
     lda     PLAYERHASKEY
     beq     update_status_cont1
-    lda     #8
-    sta     SCREENSTATUS + 32
     lda     #YELLOW
     sta     COLORMAPSTATUS + 32
+    bne     update_status_health
     
 update_status_cont1:
-	;health bars
-	lda		#19
-	sta		SCREENSTATUS+4
-	lda		#19
-	sta		SCREENSTATUS+5
-	lda		#19
-	sta		SCREENSTATUS+6
-	lda		#19
-	sta		SCREENSTATUS+7
-	lda		#19
-	sta		SCREENSTATUS+8
+    lda     #BLACK
+    sta     COLORMAPSTATUS + 32
 
-	;money numbers
-	lda		#30
-	sta		SCREENSTATUS+26
-	lda		#30
-	sta		SCREENSTATUS+27
-
-    lda     #RED
-    sta     COLORMAPSTATUS+2
-    lda     #YELLOW
-    sta     COLORMAPSTATUS+24
-	 
+update_status_health:
 	;health bar colours
 	lda		#RED
 	sta		COLORMAPSTATUS+4
 	lda		#YELLOW
 	sta		COLORMAPSTATUS+5
-	lda		#YELLOW
 	sta		COLORMAPSTATUS+6
-	lda		#YELLOW
 	sta		COLORMAPSTATUS+7
 	lda		#GREEN
 	sta		COLORMAPSTATUS+8
-    
+
+	;money numbers
+	lda		#30
+	sta		SCREENSTATUS+26
+	sta		SCREENSTATUS+27
+
+    ;money
+    lda     #YELLOW
+    sta     COLORMAPSTATUS+24
     
     ;map position (for debugging) does not >9 correctly
     ;map x 
@@ -75,12 +61,32 @@ drawScreen_loop
     sta     SCREENSTATUS,x
     dex
     bne     drawScreen_loop
-
-    ;put health and coin indicator 
+        
+    ;draw all of the status indicators, but leave them black, color them in update status when
+    ; they are active
+    
+    ; key icon
+    lda     #8
+    sta     SCREENSTATUS + 32
+        
+    ;health indicator icon
     lda     #40
     sta     SCREENSTATUS+2
+    
+    ;health bar icon
+	lda		#19
+	sta		SCREENSTATUS+4
+	sta		SCREENSTATUS+5
+	sta		SCREENSTATUS+6
+	sta		SCREENSTATUS+7
+	sta		SCREENSTATUS+8
+    
+    ;money icon
     lda     #14
     sta     SCREENSTATUS+24
+    lda     #RED
+    sta     COLORMAPSTATUS+2
+    
     rts
 
 ;==================================================================

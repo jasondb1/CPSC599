@@ -70,7 +70,7 @@ LEFT            equ #$80
 
 MAP_START_LEVEL1_X  equ #1
 MAP_START_LEVEL1_Y  equ #1
-MAP_START_LEVEL2_X  equ #6
+MAP_START_LEVEL2_X  equ #5
 MAP_START_LEVEL2_Y  equ #12
 MAP_START_LEVEL3_X  equ #19
 MAP_START_LEVEL3_Y  equ #14
@@ -289,11 +289,12 @@ enemy_charunder:      dc.b 00, 00, 00, 00, 00
 ;title and ending text
 ;text limited to 255 chars long
 title_text:
-          dc.b    "WITCHER 0.3", $0d, $0d   ;13
-          dc.b    "P BOROWOY", $0d          ;10
-          dc.b    "J DEBOER", $0d           ;9
-          dc.b    "A MCALLISTER", $0d       ;13
-          dc.b    "J WILSON", $0d ,$00          ;9 54 total chars
+          dc.b    "WITCHER 0.3", $0d, $0d   
+          dc.b    "A BBQ QUEST",$0d,$0d
+          dc.b    "P BOROWOY", $0d          
+          dc.b    "J DEBOER", $0d          
+          dc.b    "A MCALLISTER", $0d       
+          dc.b    "J WILSON", $0d ,$00
           
 ending_text:
           dc.b    "YOU RETRIEVE THE", $0d
@@ -475,6 +476,7 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
     sta     PREVJIFFY
     sta     GAMEOVER
     sta     PLAYERGOLD
+    sta     PLAYERHASKEY
     
     ;define character starting postion
 

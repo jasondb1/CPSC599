@@ -144,6 +144,7 @@ check_items_check_item1:
     ;TODO: check if player has key
     lda     PLAYERHASKEY
     beq     check_items_end
+    dec     PLAYERHASKEY
     lda     #4
     sta     PLAYERX
     sta     PLAYERY
@@ -151,7 +152,6 @@ check_items_check_item1:
     sta     MAPX
     lda     #MAP_START_LEVEL2_Y
     sta     MAPY
-    dec     PLAYERHASKEY
     jsr     drawBoard           ;redraw the board
     jmp     check_items_end
     
@@ -163,6 +163,7 @@ check_items_item2:
     ;TODO: check if player has key
     lda     PLAYERHASKEY
     beq     check_items_end
+    dec     PLAYERHASKEY
     lda     #4
     sta     PLAYERX
     sta     PLAYERY
@@ -170,7 +171,7 @@ check_items_item2:
     sta     MAPX
     lda     #MAP_START_LEVEL3_Y
     sta     MAPY
-    dec     PLAYERHASKEY
+
     jsr     drawBoard           ;redraw the board
     jmp     check_items_end
     
