@@ -8,11 +8,12 @@ spawnEnemy:
 
     stx     TEMP_ENEMYNUM
     jsr     prand_newseed
-    cmp     #254  ; change this 254/255 chance of enemy being spawned, maybe how many enemies are spawned
+    cmp     #SPAWN_CHANCE  ; change this 254/255 chance of enemy being spawned, maybe how many enemies are spawned
     bcs     spawnEnemy_end
     ;TODO randomize what enemy is spawned
     ldx     TEMP_ENEMYNUM
     
+    ;TODO randomize where enemy is (never spawn on borders, check if char under is < 16
     lda     #54
     sta     enemy_type,x
     lda     #4
@@ -48,7 +49,7 @@ move_enemy_begin:
     lda     enemy_speed,x        ;reset movement points
     sta     enemy_move_clock,x
     
-    ;TODO: determine if enemy attacks
+    ;TODO: determine if enemy attacks in collisions if close combat, or other if projectile)
     
     ;replace background tile under char
     lda     enemy_charunder,x
@@ -106,6 +107,8 @@ move_enemy_cont:
     sta     enemy_x,x
     lda     TEMP2
     sta     enemy_y,x
+    ;TODO: other collision stuff here
+    
     bcs     move_enemy_cont1
 
 move_enemy_cont1:

@@ -55,14 +55,17 @@ CHAR_PLAYER_L	equ #59
 CHAR_BORDER     equ #20
 
 ;enemy related
-NUM_ENEMIES     equ #4 ;(enemies-1 for 0 indexing)
+NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing)
+;SPAWN_CHANCE    equ #92 ;92/255 chance of enemy spawning
+SPAWN_CHANCE    equ #254 ;
+
 ENEMY_SMOL		equ #53
 ENEMY_BOSS_UL	equ #55
 ENEMY_BOSS_UR	equ #56
 ENEMY_BOSS_LL	equ #57
 ENEMY_BOSS_LR	equ #58
 
-;movement related
+;movement map related
 UP              equ #$10
 DOWN            equ #$20
 RIGHT           equ #$40
@@ -139,8 +142,8 @@ MAP_PTR_H        equ $40
 TEMP1           equ $4e
 TEMP2           equ $4f
 TEMP3           equ $50
-TEMP20           equ $51
-TEMP21           equ $52
+TEMP20          equ $51
+TEMP21          equ $52
 TEMP_ENEMYNUM   equ $53
 
 ;possible to use for (basic fp and numeric area $57 - $70
@@ -155,9 +158,10 @@ V2DURATION      equ $6a
 V3DURATION      equ $6b
 VNDURATION      equ $6c
 
-TIMERRESOLUTION equ $6d ; in Jiffys May not be necessary and hardcoded in if not changing
+;TIMERRESOLUTION equ $6d ; no longer used, can use for something else
 NOTEDURATION    equ $6e
 CURRENTNOTE     equ $6f
+;equ $70
 
 ;Higher Memory
 TEMP_PTR_L      equ $F7
@@ -170,9 +174,16 @@ CHARPOS_H       equ $FC
 PREVJIFFY       equ $FD
 COUNTDOWN       equ $FE
 
+;88 bytes should be usable for some stuff once program running
+;0200-0258        512-600        BASIC input buffer--where the charac-
+;                                   ters being INPUT will go.
+BASIC_BUFFER_AREA    equ $0200
 
 ;033c-03fb - casette buffer area
 ;feed in from graphic memory if neeeded
+;191 bytes
+CASETTE_AREA    equ $033C
+USER_LABEL      equ $033C
 
 ;nonzpage 0293-029e (rs232 storage)
 PLAYERHASKEY       equ $0293  
@@ -214,11 +225,7 @@ init:
     include     "scroll_screen.asm"
 
 init_return:
-    lda     #MAP_START_LEVEL1_X
-    sta     MAPX
-    lda     #MAP_START_LEVEL1_Y
-    sta     MAPY
-    jsr     intro
+    ;jsr     intro ; disable for testing
     
     ;set custom character set
     lda     #$ff
@@ -238,8 +245,7 @@ mainLoop_continue:
     ldx     #0          ;move enemy 0 TODO: move all enemies
     jsr     moveEnemy
     jsr     timer
-    lda     #$0
-    cmp     COUNTDOWN
+    lda     COUNTDOWN
     bne     mainLoop
     
     ;events related to timer only every 10/60 second change this as required
@@ -251,7 +257,6 @@ mainLoop_continue:
     ;jsr     GETIN       ;keyboard input ends program right now
     beq     mainLoop
     
-;TODO: game Over
     jsr     ending
     
 ;==================================================================
@@ -264,6 +269,7 @@ finished:
     sta     CHARSETSELECT
     
     rts
+;end of game
 
     include     "graphics.asm"
     include     "toolkit.asm"
@@ -315,7 +321,7 @@ ending_text:
 ;BLUE            equ #6
 ;YELLOW          equ #7
 
-;if space is required move this to cassette buffer or compact to 4 bit colors
+;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
 char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
             dc.b 07, 02, 01, 01, 05, 05, 05, 05 ;8-15
             dc.b 00, 05, 05, 05, 05, 03, 05, 05 ;16-23
@@ -452,15 +458,34 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
 
 
 ;these init values will get overwritten once game starts
+; notes: need to be careful so that basic can start program
+; bytes need to be counted
+; notes: may not be able to load if ready prompt is not at bootup position
+; or if error text cursor is above or below a certain line
+
 	org	$1e00  
 
     ;set border/screen color
     lda     #8
     sta     $900f
     
+    ;music/voice settings
+    lda     #$00
+    sta     CURRENTNOTE
+    sta     NOTEDURATION
+    sta     PREVJIFFY
+    sta     GAMEOVER
+    
+    ;player settings
+    sta     PLAYERGOLD
+    sta     PLAYERHASKEY
+    
+    ;pointer settings
+    sta     CHARPOS_L
+    sta     COLORMAP_L
+    
     ;set timerresolution 1 jiffy
     lda     #$01
-    sta     TIMERRESOLUTION
     sta     JOY1_DDRA
  
     ;initial character under player is blank
@@ -469,14 +494,13 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
     ;initial character direction is right (1)
     sta 	PLAYERDIR
 
-    ;music/voice settings
-    lda     #$00
-    sta     CURRENTNOTE
-    sta     NOTEDURATION
-    sta     PREVJIFFY
-    sta     GAMEOVER
-    sta     PLAYERGOLD
-    sta     PLAYERHASKEY
+    ;reset delay
+    lda     #10 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    sta     COUNTDOWN
+    
+    ;initial volume
+    lda     #$0f
+    sta     VOLUME
     
     ;define character starting postion
 
@@ -487,15 +511,63 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
     
     lda     #20
     sta     PLAYERX
+    
+    ;map and graphic pointers
+    lda     #MAP_START_LEVEL1_X
+    sta     MAPX
+    lda     #MAP_START_LEVEL1_Y
+    sta     MAPY
+    
+    lda     #>BASE_SCREEN
+    sta     CHARPOS_H
+    lda     #>COLORMAP
+    sta     COLORMAP_H
+    
+    ;*** these are just placeholders - if bytes are added must remove bytes below
+    ;can fill this with more instructions or bytes to write to cassette buffer 
 
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200
     
-    ;reset delay
-    lda     #15 ;set countdown timer 15 jiffys (resolution 1 jiffy)
-    sta     COUNTDOWN
+    ;jsr     loop_wait_fire ;for debuggin memory before graphics area overwritten
+    jmp     init2
     
-    ;initial volume
-    lda     #$0f
-    sta     VOLUME
-    
-    clc
+    org	$1f00
+   
+init2:
+    ;*** these are just placeholders - if bytes are added must remove bytes below
+    ;more bytes available
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+
+;transfer to casette buffer area
+    ldx     #0
+write_to_casette_buffer:
+    lda     xfer_to_casette,x
+    sta     CASETTE_AREA,x
+    inx
+    cpx     #190
+    bne     write_to_casette_buffer
     jmp     init_return
+    
+xfer_to_casette:
+;189 bytes follows:
+    dc.b    201, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201
+    
+

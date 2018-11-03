@@ -12,9 +12,10 @@ timer:
     ;if > 60 then reset timer and reduce COUNTDOWN by 1
     ;otherwise see if a jiffy has elapsed and inc counter and note duration
     
+    
     lda     PREVJIFFY
     cmp     JCLOCKL
-    beq     timer_continue  ; do nothing if a jiffy has not elapsed
+    beq     timer_end
     inc     PREVJIFFY      
     dec     V2DURATION   ;  decrement duration of note each jiffy ;
     dec     V1DURATION    ; decrement duration of note each jiffy
@@ -27,18 +28,9 @@ timer_enemies:
     cpx     #$ff
     bne     timer_enemies
 
-timer_continue:
-    lda     JCLOCKL
-    cmp     TIMERRESOLUTION     ;1/60 of second is a jiffy so 60 is 1 second
-    bpl     resetTimer  
-    rts
-
 resetTimer:
     dec     COUNTDOWN
-    
-    lda     #$00    ;set system clock to 0
-    sta     JCLOCKL
-    sta     PREVJIFFY
+
 timer_end:
     rts  
     
@@ -181,7 +173,7 @@ pto_loop:           ;multiply y by 22 (num of rows - 1)
     adc     #SCRCOLS     
     bcc     pto_loop
     inx
-    jmp     pto_loop 
+    bcs     pto_loop 
 
 pto_add_col:
     ; add x (column offset)
@@ -196,27 +188,8 @@ pto_end:
        
 ;==================================================================
 ; prand - simple linear feedback prng
-; if more randomness is required seed with something related to player input
 ; return prnad number in accumulator
-; A better generator may work better
 
-;prand_newseed:
-;    lda     JCLOCKL
-;    adc     RANDSEED
-;    sta     RANDSEED
-;
-;prand:
-;    lda     RANDSEED
-;    beq     doEor ;accounts for 0
-;    asl
-;    bcc     noEor
-;doEor: 
-;            eor #$1d
-;noEor: 
-;    sta     RANDSEED
-;            
-;    rts
-    
 prand_newseed:
     lda     JCLOCKL
     adc     RANDSEED
@@ -254,9 +227,15 @@ prand_end:
 ;==================================================================
 ; keyWait - Waits of any key to be pressed
     
-loop_kw:
-    jsr     GETIN
-    beq     loop_kw
+;loop_kw:
+;    jsr     GETIN
+;    beq     loop_kw
+;    rts
+    
+wait_fire:
+    lda     #$20         ;test fire button
+    bit     JOY1_REGA
+    bne     wait_fire   
     rts
 
 ;==================================================================

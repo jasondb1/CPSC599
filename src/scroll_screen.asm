@@ -26,7 +26,6 @@ intro_game_over:
     lda     #<ending_text
     ldx     #>ending_text
     
-    
 intro_display_text:
     sta     TEMP_PTR_L
     stx     TEMP_PTR_H
@@ -56,9 +55,10 @@ intro_loop:
 
 intro_wait:
     jsr     timer
-    jsr     playNote ;if music is wanted for intro
-    jsr     GETIN       ;keyboard input ends intro right now
-    beq     intro_wait
+    jsr     playNote   ;if music is wanted for intro
+    lda     #$20       ;test fire button
+    bit     JOY1_REGA
+    bne     intro_wait
     
 intro_end:
     rts

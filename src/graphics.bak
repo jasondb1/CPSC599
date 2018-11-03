@@ -152,9 +152,9 @@ drawBoard_cont1:
     sta     CHARPOS_H
     lda     #$97
     sta     COLORMAP_H
-    ldy     #$00
-    sty     CHARPOS_L
-    sty     COLORMAP_L
+    ;ldy     #$00
+    ;sty     CHARPOS_L
+    ;sty     COLORMAP_L
     
     ;this code starts at lower right value of the screen and draws upward
     lda     #SCREENBOTTOM
@@ -168,9 +168,9 @@ drawBoard_cont1:
     jmp     drawBoard_inner
 
 drawBoard_outer:
-    ldy     #$ff
     dec     CHARPOS_H
     dec     COLORMAP_H
+    ldy     #$ff
     
 drawBoard_inner:
     
@@ -271,6 +271,8 @@ drawBoard_inner_cont:
     beq     drawBoard_end
     jsr     draw_other
     
+    jsr     wait_fire
+    
 drawBoard_end:  
     ldx     #0  ;TODO: spawn multiple if needed, boss, etc spawn enemy 0
     jsr     spawnEnemy
@@ -355,30 +357,29 @@ put_char:
     pha
     ;lda     #<BASE_SCREEN
     ;sta     CHARPOS_L
+    ;sta     COLORMAP_L
     ;lda     #>BASE_SCREEN
     ;sta     CHARPOS_H
     
-    jsr     position_to_offset ; return x is offset_high adder a - offset
+    jsr     position_to_offset ; return x is offset_high adder y and a - offset
     
     ;deal with high bit
-    stx     TEMP21
-    cpx     #$1
-    bne     put_char_cont
+    stx     TEMP20
+    cpx     #$0
+    beq     put_char_cont
     inc     CHARPOS_H         ; increment high if set
     inc     COLORMAP_H
     
 put_char_cont:
     ;color position
-    ;lda     CHARPOS_L        
-    ;sta     COLORMAP_L
-    ;clc
-    ;lda     CHARPOS_H
-    ;adc     #120                ;distance between screenmap and colormap
-    ;sta     COLORMAP_H
+    clc
+    lda     CHARPOS_H
+    adc     #120                ;distance between screenmap and colormap
+    sta     COLORMAP_H
     
     ;store char under position
     lda     (CHARPOS_L),y
-    sta     TEMP20
+    sta     TEMP21
     
     ;draw character in new position
     pla       ; load the character
@@ -387,14 +388,13 @@ put_char_cont:
     lda     char_color,x
     sta     (COLORMAP_L),y 
     
-    lda     TEMP21
+    lda     TEMP20
     beq     put_char_end
     dec     CHARPOS_H
     dec     COLORMAP_H
     
 put_char_end:    
-    lda     TEMP20           ;return the previous character
-
+    lda     TEMP21           ;return the previous character
     rts
 
 ;==================================================================
@@ -407,27 +407,27 @@ put_char_end:
 
 get_char:
  
-    lda     #<BASE_SCREEN
-    sta     CHARPOS_L
-    lda     #>BASE_SCREEN
-    sta     CHARPOS_H
+    ;lda     #<BASE_SCREEN
+    ;sta     CHARPOS_L
+    ;lda     #>BASE_SCREEN
+    ;sta     CHARPOS_H
     
     jsr     position_to_offset ; return x is offset_high adder a - offset
     
     ;deal with high bit
-    cpx     #$1
-    bne     get_char_cont
+    cpx     #$0
+    beq     get_char_cont
     inc     CHARPOS_H         ; increment high if set
-    
+        
 get_char_cont:
     ;store char under position
-    lda     (CHARPOS_L),y ;return character at y,x        
-
-    cpx     #$1
-    bne     get_char_end
-    dec     CHARPOS_H
+    lda     (CHARPOS_L),y ;return character at y,x  
     
-get_char_end:    
+    cpx     #$0
+    beq     get_char_end
+    dec     CHARPOS_H      
+
+get_char_end:
     rts    
 
 ;==================================================================
