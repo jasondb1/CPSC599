@@ -152,6 +152,10 @@ check_items_check_item1:
     sta     MAPX
     lda     #MAP_START_LEVEL2_Y
     sta     MAPY
+    
+    lda     #2  
+    sta     char_color + 1
+    
     jsr     drawBoard           ;redraw the board
     jmp     check_items_end
     
@@ -167,6 +171,8 @@ check_items_item2:
     lda     #4
     sta     PLAYERX
     sta     PLAYERY
+    sta     char_color + 1
+    
     lda     #MAP_START_LEVEL3_X
     sta     MAPX
     lda     #MAP_START_LEVEL3_Y
@@ -179,7 +185,7 @@ check_items_item3:
     ;is it the key?
     cmp     #8
     bne     check_items_item4
-    ;TODO: pick up key
+    ;pick up key
     jsr     replace_base_char
     inc     PLAYERHASKEY
     
@@ -199,7 +205,7 @@ check_items_item6:
     ;found bbq
     cmp     #9
     bne     check_items_end
-    ;TODO: pickup gold and increase score
+    ;Pickup BBQ
     lda     #1
     sta     GAMEOVER
     
@@ -208,7 +214,7 @@ check_items_end:
 
 
 ;==================================================================
-; replace_base_char - replace character under character to base character
+; replace_base_char - replace character under player to base character
 ;
 replace_base_char:
     lda     #CHAR_BASE

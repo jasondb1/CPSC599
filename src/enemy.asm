@@ -4,17 +4,22 @@
 ; x is enemy number
 ;
 
+
+;TODO: enemy high bit set if active and check in moveEnemy
+
 spawnEnemy:
 
     stx     TEMP_ENEMYNUM
     jsr     prand_newseed
-    cmp     #SPAWN_CHANCE  ; change this 254/255 chance of enemy being spawned, maybe how many enemies are spawned
+    cmp     #SPAWN_CHANCE 
     bcs     spawnEnemy_end
-    ;TODO randomize what enemy is spawned
+    
+    ;TODO randomize what enemy is spawned and where
     ldx     TEMP_ENEMYNUM
     
-    ;TODO randomize where enemy is (never spawn on borders, check if char under is < 16
+    ;TODO randomize where enemy is (check if char under is < 16)
     lda     #54
+    ora     #$80                    ;high bit makes enemy active
     sta     enemy_type,x
     lda     #4
     sta     enemy_y,x
@@ -25,7 +30,7 @@ spawnEnemy:
     lda     #40
     sta     enemy_speed,x
     sta     enemy_move_clock,x
-    jsr     move_enemy_cont ;place enemy on screen
+    jsr     move_enemy_cont         ;place enemy on screen
 
 spawnEnemy_end:
     rts
@@ -37,12 +42,15 @@ spawnEnemy_end:
 ; x is offset of enemy 
 
 moveEnemy:
-
-    stx     TEMP_ENEMYNUM
+    
+    lda     enemy_type,x        ;check if enemy active
+    and     #$80
+    beq     move_enemy_done         
     
     lda     enemy_move_clock,x
-    cmp     #0
     beq     move_enemy_begin
+
+move_enemy_done:
     rts
     
 move_enemy_begin:    
@@ -58,6 +66,7 @@ move_enemy_begin:
     lda     enemy_x,x
     sty     TEMP2       ;store previous values in case of collision restore
     sta     TEMP3
+    stx     TEMP_ENEMYNUM
     tax
     pla
     jsr     put_char
@@ -95,7 +104,7 @@ move_enemy_cont:
     stx     TEMP_ENEMYNUM ; needed for spawn enemies calling subroutine here
     
     ;collision check
-    ;check what is under the player if > 16 then reload previous values in temp3 and temp2
+    ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
     ldy     enemy_y,x
     lda     enemy_x,x
     tax
@@ -103,7 +112,7 @@ move_enemy_cont:
     cmp     #16
     bcc     move_enemy_cont1
     ldx     TEMP_ENEMYNUM
-    lda     TEMP3        ;restore last coordinates of player
+    lda     TEMP3        ;restore last coordinates of enemy
     sta     enemy_x,x
     lda     TEMP2
     sta     enemy_y,x

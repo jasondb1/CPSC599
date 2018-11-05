@@ -6,6 +6,8 @@
 ; each jiffy is stored and on expiry 
 ;
 ; can use this for other game events as well as required
+;
+; return countdown
 
 timer: 
     ;read timer value
@@ -30,6 +32,7 @@ timer_enemies:
 
 resetTimer:
     dec     COUNTDOWN
+    ;lda     COUNTDOWN
 
 timer_end:
     rts  
@@ -42,6 +45,7 @@ playNote:
 
     ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
     lda     #$01
+    ldx     #$0
     cmp     V2DURATION
     bmi     playNote_end
     beq     playNote_silence
@@ -51,8 +55,7 @@ playNote:
     lda     melody,y
     cmp     #$ff            ;ff is the terminator for the melody line
     bne     playNote_continue
-    ldy     #$00            ;reset note to first note in melody
-    sty     CURRENTNOTE
+    stx     CURRENTNOTE     ;reset note to first note in melody
     lda     melody,y
     
 playNote_continue:    
@@ -63,8 +66,7 @@ playNote_continue:
     rts
 
 playNote_silence:   ;cuts off last jiffy, to provide separation of notes
-    lda     #$00
-    sta     VOICE2
+    stx     VOICE2
 
 playNote_end:
     rts
@@ -90,9 +92,7 @@ playSound_end:
 ;==================================================================
 ; readJoy - read Joystick controller
 ;
-; ?sets JOY1_STATE  bit 5 -fire, 4 - left, 3 - right, 2 - down, 1 - up
-; use bit 7 for fire latch? to detect double click
-;
+; return x - return joy position
 ;
 
 readJoy:   
@@ -115,7 +115,6 @@ test_right:
     lda     #$80        ;get joy1-right status
     bit     JOY1_REGB
     bne     test_left
-    ;do something if right
     ldx     #RIGHT
     
 test_left: 
@@ -125,24 +124,18 @@ test_left:
     lda     #$10         ;test right button
     bit     JOY1_REGA
     bne     test_down
-    
-    ;do something if left
     ldx     #LEFT
     
 test_down: 
     lda     #$08         ;test right button
     bit     JOY1_REGA
     bne     test_up
-    
-    ;do something if down
     ldx     #DOWN
 
 test_up: 
     lda     #$04         ;test right button
     bit     JOY1_REGA
     bne     cont_rj
-    
-    ;do something if up   
     ldx     #UP
 
 cont_rj:
@@ -192,7 +185,10 @@ pto_end:
 
 prand_newseed:
     lda     JCLOCKL
-    adc     RANDSEED
+    bne     prand_cont
+    adc     #1
+    
+prand_cont:
     sta     RANDSEED
 
 prand:

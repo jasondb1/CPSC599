@@ -147,7 +147,7 @@ drawBoard_cont1:
     eor     #$6a
     sta     RANDSEED
 
-    ;load screen and color pointers
+    ;load screen and color pointers starts at lower right value of the screen and draws upward
     lda     #$1f
     sta     CHARPOS_H
     lda     #$97
@@ -155,8 +155,7 @@ drawBoard_cont1:
     ldy     #$00
     sty     CHARPOS_L
     sty     COLORMAP_L
-    
-    ;this code starts at lower right value of the screen and draws upward
+     
     lda     #SCREENBOTTOM
     sta     TEMP21                 ;keeps track of row (for bottom and top borders)
     lda     #SCREENRIGHT
@@ -239,7 +238,6 @@ drawBoard_test_random_elements:
     and     #06                     ; only allow characters 2-7 to be drawn
     jmp     drawBoard_to_screen
 
-;default background graphic
 drawBoard_base_char:
     lda     #CHAR_BASE
     
@@ -250,7 +248,8 @@ drawBoard_to_screen:
     sta     (COLORMAP_L),y
     dec     TEMP20                  ;column
     bne     drawBoard_inner_cont
-    ; if col reaches 0 then reset and dec row
+    
+    ;if col reaches 0 then reset and dec row used for borders
     lda     #SCREENRIGHT
     sta     TEMP20                  ;column
     dec     TEMP21                  ;row
@@ -261,13 +260,13 @@ drawBoard_inner_cont:
     bne     drawBoard_inner
     ;end of inner loop
     
-    dec     TEMP1               ; this is the counter for outer loop iterations
+    dec     TEMP1                   ;this is the counter for outer loop iterations
     bne     drawBoard_outer
     ;end of outer loop
     
     ;draw other board elements like castles houses, etc here
     lda     #$0f
-    and     TEMP10          ;map data
+    and     TEMP10                  ;map data
     beq     drawBoard_end
     jsr     draw_other
     
@@ -285,58 +284,58 @@ drawBoard_end:
 
 draw_other:
     
-    sta     TEMP10   ;map data
-    cmp     #$08     ;draw Castle
+    sta     TEMP10      ;map data
+    cmp     #$08        ;draw Castle
     bne     draw_other_dungeon_door
-    ldx     #5      ;column
-    ldy     #6      ;row
+    ldx     #5          ;column
+    ldy     #6          ;row
     lda     #21
     jsr     put_char
     
-    ldx     #6      ;column
-    ldy     #6      ;row
+    ldx     #6          ;column
+    ldy     #6          ;row
     lda     #10
     jsr     put_char
     
-    ldx     #7      ;column
-    ldy     #6      ;row
+    ldx     #7          ;column
+    ldy     #6          ;row
     lda     #21
     jsr     put_char
 
 draw_other_dungeon_door:
-    lda     TEMP10   ;map data
-    cmp     #$09     ;draw dungeon entrance
+    lda     TEMP10      ;map data
+    cmp     #$09        ;draw dungeon entrance
     bne     draw_other_bbq
-    ldx     #5      ;column
-    ldy     #6      ;row
+    ldx     #5          ;column
+    ldy     #6          ;row
     lda     #21
     jsr     put_char
     
-    ldx     #6      ;column
-    ldy     #6      ;row
-    lda     #11     ;dungeon door
+    ldx     #6          ;column
+    ldy     #6          ;row
+    lda     #11         ;dungeon door
     jsr     put_char
     
-    ldx     #7      ;column
-    ldy     #6      ;rowd $15
+    ldx     #7          ;column
+    ldy     #6          ;row
     lda     #21
     jsr     put_char
     
 draw_other_bbq:
-    lda     TEMP10   ;map data
-    cmp     #$05     ;draw dungeon entrance
+    lda     TEMP10      ;map data
+    cmp     #$05        ;draw dungeon entrance
     bne     draw_other_key
-    ldx     #5      ;column
-    ldy     #6      ;row
+    ldx     #5          ;column
+    ldy     #6          ;row
     lda     #9
     jsr     put_char
     
 draw_other_key:
-    lda     TEMP10   ;map data
-    cmp     #$04     ;draw dungeon entrance
+    lda     TEMP10      ;map data
+    cmp     #$04        ;draw dungeon entrance
     bne     draw_other_end
-    ldx     #5      ;column
-    ldy     #6      ;row
+    ldx     #5          ;column
+    ldy     #6          ;row
     lda     #8
     jsr     put_char
     
@@ -352,12 +351,8 @@ draw_other_end:
 ; returns - previous character
 
 put_char:
-    pha
-    ;lda     #<BASE_SCREEN
-    ;sta     CHARPOS_L
-    ;lda     #>BASE_SCREEN
-    ;sta     CHARPOS_H
-    
+    and     #$7f               ; strip top bit of character
+    pha 
     jsr     position_to_offset ; return x is offset_high adder a - offset
     
     ;deal with high bit
@@ -368,25 +363,19 @@ put_char:
     inc     COLORMAP_H
     
 put_char_cont:
-    ;color position
-    ;lda     CHARPOS_L        
-    ;sta     COLORMAP_L
-    ;clc
-    ;lda     CHARPOS_H
-    ;adc     #120                ;distance between screenmap and colormap
-    ;sta     COLORMAP_H
     
     ;store char under position
     lda     (CHARPOS_L),y
     sta     TEMP20
     
     ;draw character in new position
-    pla       ; load the character
+    pla                      ; load the character
     tax
     sta     (CHARPOS_L),y    ; print next character to position
     lda     char_color,x
     sta     (COLORMAP_L),y 
     
+    ;restore CHARPOS_H and COLORMAP_H
     lda     TEMP21
     beq     put_char_end
     dec     CHARPOS_H
@@ -406,23 +395,19 @@ put_char_end:
 ; returns - previous character
 
 get_char:
- 
-    lda     #<BASE_SCREEN
-    sta     CHARPOS_L
-    lda     #>BASE_SCREEN
-    sta     CHARPOS_H
     
-    jsr     position_to_offset ; return x is offset_high adder a - offset
+    jsr     position_to_offset  ; return x is offset_high adder a - offset
     
     ;deal with high bit
     cpx     #$1
     bne     get_char_cont
-    inc     CHARPOS_H         ; increment high if set
+    inc     CHARPOS_H           ; increment high if set
     
 get_char_cont:
     ;store char under position
     lda     (CHARPOS_L),y ;return character at y,x        
 
+    ;restore CHARPOS_H and COLORMAP_H
     cpx     #$1
     bne     get_char_end
     dec     CHARPOS_H

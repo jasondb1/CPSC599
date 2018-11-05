@@ -56,8 +56,8 @@ CHAR_BORDER     equ #20
 
 ;enemy related
 NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing)
-;SPAWN_CHANCE    equ #92 ;92/255 chance of enemy spawning
-SPAWN_CHANCE    equ #254 ;
+SPAWN_CHANCE    equ #92 ;92/255 chance of enemy spawning (freeze when no enemy spawned)
+;SPAWN_CHANCE    equ #254 ;
 
 ENEMY_SMOL		equ #53
 ENEMY_BOSS_UL	equ #55
@@ -66,10 +66,10 @@ ENEMY_BOSS_LL	equ #57
 ENEMY_BOSS_LR	equ #58
 
 ;movement map related
-UP              equ #$10
-DOWN            equ #$20
-RIGHT           equ #$40
-LEFT            equ #$80
+UP                  equ #$10
+DOWN                equ #$20
+RIGHT               equ #$40
+LEFT                equ #$80
 
 MAP_START_LEVEL1_X  equ #1
 MAP_START_LEVEL1_Y  equ #1
@@ -161,7 +161,7 @@ VNDURATION      equ $6c
 ;TIMERRESOLUTION equ $6d ; no longer used, can use for something else
 NOTEDURATION    equ $6e
 CURRENTNOTE     equ $6f
-;equ $70
+PLAYERSPEED     equ $70
 
 ;Higher Memory
 TEMP_PTR_L      equ $F7
@@ -177,30 +177,38 @@ COUNTDOWN       equ $FE
 ;88 bytes should be usable for some stuff once program running
 ;0200-0258        512-600        BASIC input buffer--where the charac-
 ;                                   ters being INPUT will go.
-BASIC_BUFFER_AREA    equ $0200
+BASIC_BUFFER_AREA       equ $0200
+;char_color           equ $0200
+;enemy status arrays
+  
 
 ;033c-03fb - casette buffer area
 ;feed in from graphic memory if neeeded
 ;191 bytes
-CASETTE_AREA    equ $033C
-USER_LABEL      equ $033C
+enemy_type              equ $033c
+enemy_speed             equ $033c + (NUM_ENEMIES * 1)       
+enemy_move_clock        equ $033c + (NUM_ENEMIES * 2)
+enemy_health            equ $033c + (NUM_ENEMIES * 3)  
+enemy_x                 equ $033c + (NUM_ENEMIES * 4)  
+enemy_y                 equ $033c + (NUM_ENEMIES * 5)  
+enemy_charunder         equ $033c + (NUM_ENEMIES * 6)    
 
 ;nonzpage 0293-029e (rs232 storage)
-PLAYERHASKEY       equ $0293  
-PLAYERWEAPONDAMAGE equ $0294
-CHARUNDERPLAYER equ $0295 
-PLAYERHEALTH    equ $0296 
-PLAYERGOLD      equ $0297 
-PLAYERY         equ $0298 
-PLAYERX         equ $0299 
-PLAYERDIR		equ	$029a
+PLAYERHASKEY        equ $0293  
+PLAYERWEAPONDAMAGE  equ $0294
+CHARUNDERPLAYER     equ $0295 
+PLAYERHEALTH        equ $0296 
+PLAYERGOLD          equ $0297 
+PLAYERY             equ $0298 
+PLAYERX             equ $0299 
+PLAYERDIR		    equ	$029a
 
-MAPX            equ $029b;
-MAPY            equ $029c;
+MAPX                equ $029b;
+MAPY                equ $029c;
 
-TEMPVAR			equ $029d
+TEMPVAR			    equ $029d
 
-GAMEOVER        equ $029e
+GAMEOVER            equ $029e
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -219,12 +227,64 @@ basicEnd:    dc.w    0
 ; init - Initializes stuff
 init:
     ;basic init is in screen memory to save memory
-    ;initialization loaded into graphic memory and written over after
-    
-    jmp     $1e00
-    include     "scroll_screen.asm"
 
-init_return:
+    ;set border/screen color
+    lda     #8
+    sta     $900f
+    
+    ;music/voice settings
+    ldx     #$00
+    stx     CURRENTNOTE
+    stx     NOTEDURATION
+    stx     PREVJIFFY
+    stx     GAMEOVER
+    
+    ;player settings
+    stx     PLAYERGOLD
+    stx     PLAYERHASKEY
+    
+    ;pointer settings
+    stx     CHARPOS_L
+    stx     COLORMAP_L
+    
+    ;values set to 1
+    inx
+    stx     JOY1_DDRA
+ 
+    ;initial character under player is char_Base(1)
+    stx     CHARUNDERPLAYER
+ 	
+    ;initial character direction is right (1)
+    stx 	PLAYERDIR
+    
+    ;map and graphic pointers
+    lda     #MAP_START_LEVEL1_X
+    stx     MAPX
+    lda     #MAP_START_LEVEL1_Y
+    stx     MAPY
+    
+    ;reset delay
+    lda     #10 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    
+    ;initial player 
+    sta     COUNTDOWN
+    sta     PLAYERSPEED
+    sta     PLAYERHEALTH
+    sta     PLAYERY
+    sta     PLAYERX
+    
+    ;initial volume
+    lda     #$0f
+    sta     VOLUME
+
+    lda     #>BASE_SCREEN
+    sta     CHARPOS_H
+    lda     #>COLORMAP
+    sta     COLORMAP_H
+
+;==================================================================
+; 
+;
     ;jsr     intro ; disable for testing
     
     ;set custom character set
@@ -235,6 +295,10 @@ init_return:
     jsr     drawScreen
     jsr     move_player_cont
 
+;==================================================================
+; mainLoop
+;
+
 mainLoop:
 mainLoop_continue:
         
@@ -244,17 +308,16 @@ mainLoop_continue:
     jsr     playSound
     ldx     #0          ;move enemy 0 TODO: move all enemies
     jsr     moveEnemy
-    jsr     timer
+    jsr     timer       ;timer returns countdown, branch if not 0
     lda     COUNTDOWN
     bne     mainLoop
     
     ;events related to timer only every 10/60 second change this as required
-    lda     #10
+    lda     PLAYERSPEED
     sta     COUNTDOWN
     jsr     readJoy             ;player movement must be limited
    
     lda     GAMEOVER
-    ;jsr     GETIN       ;keyboard input ends program right now
     beq     mainLoop
     
     jsr     ending
@@ -262,7 +325,7 @@ mainLoop_continue:
 ;==================================================================
 ; finished - cleanup and end
 finished:
-    lda     #$0
+    ;lda     #$0
     sta     VOLUME
     
     lda     #240
@@ -271,11 +334,11 @@ finished:
     rts
 ;end of game
 
+    include     "scroll_screen.asm"
     include     "graphics.asm"
     include     "toolkit.asm"
     include     "enemy.asm"
     include     "player.asm"
-
 
 ;===================================================================
 ; variable section
@@ -283,24 +346,16 @@ finished:
 ; these are here to prevent alignment issues
 ;
 
-;enemy status arrays
-enemy_type:           dc.b 00, 00, 00, 00, 00; enemy 0, 1, 2, 3, 4 ... must have equal amounts on all
-enemy_speed:          dc.b 00, 00, 00, 00, 00
-enemy_move_clock:     dc.b 00, 00, 00, 00, 00
-enemy_health:         dc.b 00, 00, 00, 00, 00
-enemy_x:              dc.b 00, 00, 00, 00, 00
-enemy_y:              dc.b 00, 00, 00, 00, 00
-enemy_charunder:      dc.b 00, 00, 00, 00, 00
-
 ;title and ending text
 ;text limited to 255 chars long
 title_text:
           dc.b    "WITCHER 0.3", $0d, $0d   
-          dc.b    "A BBQ QUEST",$0d,$0d
-          dc.b    "P BOROWOY", $0d          
-          dc.b    "J DEBOER", $0d          
-          dc.b    "A MCALLISTER", $0d       
-          dc.b    "J WILSON", $0d ,$00
+          dc.b    "BBQ SIDE QUEST",$0d,$0d, $0d
+          ;dc.b    "P BOROWOY", $0d          
+          ;dc.b    "J DEBOER", $0d          
+          ;dc.b    "A MCALLISTER", $0d       
+          ;dc.b    "J WILSON", $0d, $0d
+          dc.b    "PRESS FIRE TO START", $00
           
 ending_text:
           dc.b    "YOU RETRIEVE THE", $0d
@@ -309,27 +364,6 @@ ending_text:
           dc.b    "YOU ARE MAD!", $0d          
           dc.b    $0d       
           dc.b    "THE END.", $0d ,$00          
-
-;==================================================================
-;Colors
-;BLACK           equ #0
-;WHITE           equ #1
-;RED             equ #2
-;CYAN            equ #3
-;PURPLE          equ #4
-;GREEN           equ #5
-;BLUE            equ #6
-;YELLOW          equ #7
-
-;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
-char_color: dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
-            dc.b 07, 02, 01, 01, 05, 05, 05, 05 ;8-15
-            dc.b 00, 05, 05, 05, 05, 03, 05, 05 ;16-23
-            dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
-            dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
-            dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
-            dc.b 00, 05, 05, 05, 05, 04, 04, 04 ;48-55
-            dc.b 00, 05, 05, 07, 05, 01, 07, 07 ;56-63
 
 ;map data - holds exit and other information
 ;note maps are 22 screens wide and up to 256 tall
@@ -452,122 +486,28 @@ map_data: ;                                                  <<<  forest    |  d
 melody:   dc.b 207, 201, 195, 207, 201, 195, 195, 195, 195, 195, 201, 201, 201, 201, 207, 201, 195,  00, 255
 duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8,   8,  16,  16,  32,  64, 255
 
+;==================================================================
+;Colors
+;BLACK           equ #0
+;WHITE           equ #1
+;RED             equ #2
+;CYAN            equ #3
+;PURPLE          equ #4
+;GREEN           equ #5
+;BLUE            equ #6
+;YELLOW          equ #7
 
+;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
+; other info can be stored in here in the top bits too
+
+char_color  dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
+            dc.b 07, 02, 01, 01, 05, 05, 05, 05 ;8-15
+            dc.b 00, 05, 05, 05, 05, 03, 05, 05 ;16-23
+            dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
+            dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
+            dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
+            dc.b 00, 05, 05, 05, 05, 04, 04, 04 ;48-55
+            dc.b 00, 05, 05, 07, 05, 01, 07, 07 ;56-63
+            
 ;must go last because the address is after all of this code
     include     "charset.asm"
-
-
-;these init values will get overwritten once game starts
-; notes: need to be careful so that basic can start program
-; bytes need to be counted
-; notes: may not be able to load if ready prompt is not at bootup position
-; or if error text cursor is above or below a certain line
-
-	org	$1e00  
-
-    ;set border/screen color
-    lda     #8
-    sta     $900f
-    
-    ;music/voice settings
-    lda     #$00
-    sta     CURRENTNOTE
-    sta     NOTEDURATION
-    sta     PREVJIFFY
-    sta     GAMEOVER
-    
-    ;player settings
-    sta     PLAYERGOLD
-    sta     PLAYERHASKEY
-    
-    ;pointer settings
-    sta     CHARPOS_L
-    sta     COLORMAP_L
-    
-    ;set timerresolution 1 jiffy
-    lda     #$01
-    sta     JOY1_DDRA
- 
-    ;initial character under player is blank
-    sta     CHARUNDERPLAYER
- 	
-    ;initial character direction is right (1)
-    sta 	PLAYERDIR
-
-    ;reset delay
-    lda     #10 ;set countdown timer 15 jiffys (resolution 1 jiffy)
-    sta     COUNTDOWN
-    
-    ;initial volume
-    lda     #$0f
-    sta     VOLUME
-    
-    ;define character starting postion
-
-    ;initial player 
-    lda     #10
-    sta     PLAYERHEALTH
-    sta     PLAYERY
-    
-    lda     #20
-    sta     PLAYERX
-    
-    ;map and graphic pointers
-    lda     #MAP_START_LEVEL1_X
-    sta     MAPX
-    lda     #MAP_START_LEVEL1_Y
-    sta     MAPY
-    
-    lda     #>BASE_SCREEN
-    sta     CHARPOS_H
-    lda     #>COLORMAP
-    sta     COLORMAP_H
-    
-    ;*** these are just placeholders - if bytes are added must remove bytes below
-    ;can fill this with more instructions or bytes to write to cassette buffer 
-
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200
-    
-    ;jsr     loop_wait_fire ;for debuggin memory before graphics area overwritten
-    jmp     init2
-    
-    org	$1f00
-   
-init2:
-    ;*** these are just placeholders - if bytes are added must remove bytes below
-    ;more bytes available
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-
-;transfer to casette buffer area
-    ldx     #0
-write_to_casette_buffer:
-    lda     xfer_to_casette,x
-    sta     CASETTE_AREA,x
-    inx
-    cpx     #190
-    bne     write_to_casette_buffer
-    jmp     init_return
-    
-xfer_to_casette:
-;189 bytes follows:
-    dc.b    201, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
-    dc.b    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201
-    
-
