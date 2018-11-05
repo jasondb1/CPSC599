@@ -8,7 +8,7 @@
 spawnEnemy:
 
     stx     TEMP_ENEMYNUM
-    jsr     prand_newseed
+    jsr     prand
     cmp     #SPAWN_CHANCE 
     bcc     spawn_enemy_begin
     lda     #$00

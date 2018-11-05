@@ -10,32 +10,37 @@ update_status:
     lda     PLAYERHASKEY
     beq     update_status_cont1
     lda     #YELLOW
-    sta     COLORMAPSTATUS + 32
+    sta     COLORMAPSTATUS + 31
     bne     update_status_health
     
 update_status_cont1:
     lda     #BLACK
-    sta     COLORMAPSTATUS + 32
+    sta     COLORMAPSTATUS + 31
 
 update_status_health:
 	;health bar colours
 	lda		#RED
-	sta		COLORMAPSTATUS+4
+	sta		COLORMAPSTATUS+36
 	lda		#YELLOW
-	sta		COLORMAPSTATUS+5
-	sta		COLORMAPSTATUS+6
-	sta		COLORMAPSTATUS+7
+	sta		COLORMAPSTATUS+37
+	sta		COLORMAPSTATUS+38
+	sta		COLORMAPSTATUS+39
 	lda		#GREEN
-	sta		COLORMAPSTATUS+8
-
-	;money numbers
-	lda		#30
-	sta		SCREENSTATUS+26
-	sta		SCREENSTATUS+27
+	sta		COLORMAPSTATUS+40
 
     ;money
     lda     #YELLOW
     sta     COLORMAPSTATUS+24
+    
+    ldx     #4
+    ldy     #23
+    lda     PLAYERGOLD_H
+    jsr     print_num
+    
+    ldx     #6
+    ldy     #23
+    lda     PLAYERGOLD_L
+    jsr     print_num
     
     ;map position (for debugging) does not >9 correctly
     ;map x 
@@ -47,6 +52,40 @@ update_status_health:
     lda     #30
     adc     MAPX
     sta     SCREENSTATUS+18
+    
+    rts
+    
+;==================================================================
+; printNum - prints a 2 digit number to screen in bcd format
+;
+; a - the number to print
+; y - the row to print
+; x - the col to print to  
+print_num:
+    sty     TEMP10
+    stx     TEMP11
+    pha
+    pha
+    jsr    position_to_offset
+    pla
+    lsr
+    lsr
+    lsr
+    lsr
+    clc
+    adc     #30         ;offset to digits in character memory
+    ldy     TEMP10
+    ldx     TEMP11
+    jsr     put_char
+    
+    pla 
+    and     #$0f
+    clc
+    adc     #30
+    ldy     TEMP10
+    ldx     TEMP11
+    inx
+    jsr     put_char  
     
     rts
 
@@ -67,26 +106,27 @@ drawScreen_loop
     
     ; key icon
     lda     #8
-    sta     SCREENSTATUS + 32
+    sta     SCREENSTATUS + 31
         
     ;health indicator icon
     lda     #40
-    sta     SCREENSTATUS+2
+    sta     SCREENSTATUS+34
     
     ;health bar icon
 	lda		#19
-	sta		SCREENSTATUS+4
-	sta		SCREENSTATUS+5
-	sta		SCREENSTATUS+6
-	sta		SCREENSTATUS+7
-	sta		SCREENSTATUS+8
+	sta		SCREENSTATUS+36
+	sta		SCREENSTATUS+37
+	sta		SCREENSTATUS+38
+	sta		SCREENSTATUS+39
+    sta		SCREENSTATUS+40
     
-    ;money icon
+    ;color gold and health icons
     lda     #14
     sta     SCREENSTATUS+24
     lda     #RED
-    sta     COLORMAPSTATUS+2
+    sta     COLORMAPSTATUS+34
     
+    jsr     update_status
     rts
 
 ;==================================================================
@@ -267,9 +307,10 @@ drawBoard_inner_cont:
     ;draw other board elements like castles houses, etc here
     lda     #$0f
     and     TEMP10                  ;map data only use high bits to determine what else is drawn
-    sta     TEMP10      ;map data
+    sta     TEMP10                  ;map data
     jsr     draw_other
     
+    jsr     prand_newseed
     ldx     #NUM_ENEMIES
 drawBoard_end:  
     jsr     spawnEnemy
@@ -339,11 +380,12 @@ draw_other_bbq:
     jsr     put_char
     
 draw_other_gold:
-    lda     TEMP10      ;map data
-    cmp     #$06        ;draw gold
-    bne     draw_other_end
+    jsr     prand
+    cmp     #GOLD_CHANCE 
+    bcs     draw_other_end
     lda     #14
     jsr     spawn_char
+    
     
 draw_other_end:
     rts

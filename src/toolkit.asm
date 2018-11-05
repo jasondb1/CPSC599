@@ -187,11 +187,7 @@ pto_end:
 prand_newseed:
     lda     JCLOCKL
     sta     RANDSEED
-
-prand_not_zero:
-    ;inc     RANDSEED
     
-
 prand:
     lda     RANDSEED
     asl

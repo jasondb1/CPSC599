@@ -54,10 +54,12 @@ CHAR_PLAYER     equ #63
 CHAR_PLAYER_L	equ #59
 CHAR_BORDER     equ #20
 
+GOLD_CHANCE     equ #250     ;chance of spawning gold
+
 ;enemy related
 NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
-;SPAWN_CHANCE    equ #92 ;92/255 chance of enemy spawning (freeze when no enemy spawned)
-SPAWN_CHANCE    equ #254 ;
+SPAWN_CHANCE    equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
+;SPAWN_CHANCE    equ #254 ;
 
 ENEMY_SMOL		equ #53
 ENEMY_BOSS_UL	equ #55
@@ -134,7 +136,7 @@ BORDERRIGHT      equ $2a
 MAP_PTR_L        equ $3f
 MAP_PTR_H        equ $40
 TEMP_PTO         equ $41
-;equ $42
+TEMP11           equ $42
 
 
 ;possible to use $4e-$53 (misc work area) - these will change if some rom routines called
@@ -144,7 +146,7 @@ TEMP2           equ $4f
 TEMP3           equ $50
 TEMP20          equ $51
 TEMP21          equ $52
-TEMP_ENEMYNUM   equ $53
+
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
@@ -167,7 +169,6 @@ PLAYERSPEED     equ $70
 TEMP_PTR_L      equ $F7
 TEMP_PTR_H      equ $F8
 
-
 COLORMAP_L      equ $F9
 COLORMAP_H      equ $FA 
 CHARPOS_L       equ $FB 
@@ -180,11 +181,11 @@ COUNTDOWN       equ $FE
 ;0200-0258        512-600        BASIC input buffer--where the charac-
 ;                                   ters being INPUT will go.
 BASIC_BUFFER_AREA       equ $0200
-;char_color           equ $0200
 ;enemy status arrays
 SPAWN_X             equ $0200   ; move to zp if possible maybe use TEMP_PTR instead
 SPAWN_Y             equ $0201
-  
+TEMPVAR			    equ $0202
+TEMP_ENEMYNUM       equ $0203
 
 ;033c-03fb - casette buffer area
 ;feed in from graphic memory if neeeded
@@ -201,8 +202,8 @@ enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)
 PLAYERHASKEY        equ $0293  
 PLAYERWEAPONDAMAGE  equ $0294
 CHARUNDERPLAYER     equ $0295 
-PLAYERHEALTH        equ $0296 
-PLAYERGOLD          equ $0297 
+PLAYERGOLD_H        equ $0296       ;BCD number
+PLAYERGOLD_L        equ $0297       ;BCD number
 PLAYERY             equ $0298 
 PLAYERX             equ $0299 
 PLAYERDIR		    equ	$029a
@@ -210,7 +211,7 @@ PLAYERDIR		    equ	$029a
 MAPX                equ $029b;
 MAPY                equ $029c;
 
-TEMPVAR			    equ $029d
+PLAYERHEALTH        equ $029d
 
 GAMEOVER            equ $029e
 
@@ -244,7 +245,8 @@ init:
     stx     GAMEOVER
     
     ;player settings
-    stx     PLAYERGOLD
+    stx     PLAYERGOLD_L
+    stx     PLAYERGOLD_H
     stx     PLAYERHASKEY
     
     ;pointer settings
@@ -312,8 +314,6 @@ mainLoop_continue:
     jsr     timer       ;timer returns countdown, branch if not 0
     jsr     playNote
     jsr     playSound
-    
-    ;ldx     #0          ;move enemy 0 TODO: move all enemies
 
     ldx     #NUM_ENEMIES
 main_loop_move_enemy:  
@@ -408,18 +408,16 @@ ending_text:
 ; $D - Opening Bottom; $E - Opening Top; $7 - Opening Left; $B - Opening Right
 
 ;upper bits:
-;f - spawn boss (do not spawn enemies)
+;f - spawn boss (do not spawn other enemies?)
 ;e 
-;d - 
-;c -
-;b 
-;a
+; spawn enemies as normal <14 (can move this up or down if required just change code in graphics.asm
+;c - draw river - vertical with bridge
+;b - draw river - horiz with bridge
+;a - draw lake
 ;9 - draw dungeon entrance
 ;8 - draw castle
-
-; spawn enemies as normal <8 (can move this up if required just change code in graphics.asm
 ;7 - draw house/hut
-;6 - spawn gold
+;6 
 ;5 - spawn bbq
 ;4 - spawn key
 ;3 - 
@@ -515,8 +513,8 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
 ; other info can be stored in here in the top bits too
 
 char_color  dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
-            dc.b 07, 02, 01, 01, 05, 05, 05, 05 ;8-15
-            dc.b 00, 05, 05, 05, 05, 03, 05, 05 ;16-23
+            dc.b 07, 02, 01, 01, 05, 05, 07, 05 ;8-15
+            dc.b 00, 05, 05, 05, 05, 03, 05, 06 ;16-23
             dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
             dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
             dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47

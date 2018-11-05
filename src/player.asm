@@ -197,6 +197,8 @@ check_items_item5:
     ;found gold
     cmp     #14
     bne     check_items_item6
+    jsr     add_gold_rand
+    jsr     replace_base_char
     ;TODO: pickup gold and increase score
     
 check_items_item6:
@@ -220,4 +222,29 @@ replace_base_char:
     ldy     PLAYERY
     jsr     put_char
     
+    rts
+
+;==================================================================
+; add_gold - adds an amount of gold to player
+; note - use bcd numbers
+;
+; a - amount of gold or cal random gold
+
+
+add_gold_rand:
+    jsr     prand
+    and     #$07    ;each gold randomly worth up to 8
+    adc     #1
+    
+add_gold:
+    clc
+    sed
+    adc     PLAYERGOLD_L
+    sta     PLAYERGOLD_L
+    bcc     add_gold_end
+    adc     PLAYERGOLD_H
+    sta     PLAYERGOLD_H
+
+add_gold_end:    
+    cld
     rts
