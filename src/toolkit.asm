@@ -32,7 +32,7 @@ timer_enemies:
 
 resetTimer:
     dec     COUNTDOWN
-    ;lda     COUNTDOWN
+    lda     COUNTDOWN
 
 timer_end:
     rts  
@@ -45,7 +45,6 @@ playNote:
 
     ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
     lda     #$01
-    ldx     #$0
     cmp     V2DURATION
     bmi     playNote_end
     beq     playNote_silence
@@ -55,7 +54,8 @@ playNote:
     lda     melody,y
     cmp     #$ff            ;ff is the terminator for the melody line
     bne     playNote_continue
-    stx     CURRENTNOTE     ;reset note to first note in melody
+    ldy     #$0
+    sty     CURRENTNOTE     ;reset note to first note in melody
     lda     melody,y
     
 playNote_continue:    
@@ -66,6 +66,7 @@ playNote_continue:
     rts
 
 playNote_silence:   ;cuts off last jiffy, to provide separation of notes
+    ldy     #$0
     stx     VOICE2
 
 playNote_end:
@@ -155,7 +156,7 @@ cont_rj:
 position_to_offset:
     
     dex
-    stx     TEMP1   ;stores column
+    stx     TEMP_PTO   ;stores column
     lda     #$00
     tax             ; x will hold the offset_high
     
@@ -171,7 +172,7 @@ pto_loop:           ;multiply y by 22 (num of rows - 1)
 pto_add_col:
     ; add x (column offset)
     clc
-    adc     TEMP1       ;final result in accumulator  
+    adc     TEMP_PTO       ;final result in accumulator  
     bcc     pto_end
     inx
     
@@ -185,11 +186,11 @@ pto_end:
 
 prand_newseed:
     lda     JCLOCKL
-    bne     prand_cont
-    adc     #1
-    
-prand_cont:
     sta     RANDSEED
+
+prand_not_zero:
+    ;inc     RANDSEED
+    
 
 prand:
     lda     RANDSEED
@@ -213,6 +214,7 @@ prand:
     asl
     asl
     eor     RANDSEED
+    beq     prand_newseed
 
 prand_end: 
     sta     RANDSEED

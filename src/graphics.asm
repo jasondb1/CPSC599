@@ -266,13 +266,15 @@ drawBoard_inner_cont:
     
     ;draw other board elements like castles houses, etc here
     lda     #$0f
-    and     TEMP10                  ;map data
-    beq     drawBoard_end
+    and     TEMP10                  ;map data only use high bits to determine what else is drawn
+    sta     TEMP10      ;map data
     jsr     draw_other
     
+    ldx     #NUM_ENEMIES
 drawBoard_end:  
-    ldx     #0  ;TODO: spawn multiple if needed, boss, etc spawn enemy 0
     jsr     spawnEnemy
+    dex
+    bpl     drawBoard_end
     
     rts
 
@@ -284,7 +286,6 @@ drawBoard_end:
 
 draw_other:
     
-    sta     TEMP10      ;map data
     cmp     #$08        ;draw Castle
     bne     draw_other_dungeon_door
     ldx     #5          ;column
@@ -305,7 +306,7 @@ draw_other:
 draw_other_dungeon_door:
     lda     TEMP10      ;map data
     cmp     #$09        ;draw dungeon entrance
-    bne     draw_other_bbq
+    bne     draw_other_key
     ldx     #5          ;column
     ldy     #6          ;row
     lda     #21
@@ -320,27 +321,73 @@ draw_other_dungeon_door:
     ldy     #6          ;row
     lda     #21
     jsr     put_char
+
+draw_other_key:
+    lda     TEMP10      ;map data
+    cmp     #$04        ;draw key
+    bne     draw_other_bbq
+    lda     #8
+    jsr     spawn_char
     
 draw_other_bbq:
     lda     TEMP10      ;map data
     cmp     #$05        ;draw dungeon entrance
-    bne     draw_other_key
+    bne     draw_other_gold
     ldx     #5          ;column
     ldy     #6          ;row
     lda     #9
     jsr     put_char
     
-draw_other_key:
+draw_other_gold:
     lda     TEMP10      ;map data
-    cmp     #$04        ;draw dungeon entrance
+    cmp     #$06        ;draw gold
     bne     draw_other_end
-    ldx     #5          ;column
-    ldy     #6          ;row
-    lda     #8
-    jsr     put_char
+    lda     #14
+    jsr     spawn_char
     
 draw_other_end:
     rts
+    
+;==================================================================
+; spawn_char - puts character onto screen in random location
+; a- the character (0-63) to place on screen 
+;
+; return
+; x-  returns col
+; y - returns row
+
+spawn_char:
+    pha
+    jsr     prand_newseed
+    
+spawn_char_relocate:
+    jsr     prand
+    and     #$0f
+    adc     #$3
+    tay
+    sty     SPAWN_Y
+    jsr     prand
+    and     #$0f
+    adc     #$3
+    tax
+    stx     SPAWN_X
+    jsr     get_char        ;check if char under is < 8
+    cmp     #$08
+    bcs     spawn_char_relocate
+    
+    ldy     SPAWN_Y
+    ldx     SPAWN_X
+    pla
+    jsr     put_char
+    
+    ldy     SPAWN_Y
+    ldx     SPAWN_X
+
+
+spawn_char_end:
+    rts
+
+
 
 ;==================================================================
 ; put_char - puts character onto screen
@@ -351,7 +398,7 @@ draw_other_end:
 ; returns - previous character
 
 put_char:
-    and     #$7f               ; strip top bit of character
+    and     #$7f               ; strip high bit of character
     pha 
     jsr     position_to_offset ; return x is offset_high adder a - offset
     
@@ -392,7 +439,7 @@ put_char_end:
 ; y - the row
 ; x - the col
 ;
-; returns - previous character
+; returns - character at position
 
 get_char:
     

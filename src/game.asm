@@ -55,9 +55,9 @@ CHAR_PLAYER_L	equ #59
 CHAR_BORDER     equ #20
 
 ;enemy related
-NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing)
-SPAWN_CHANCE    equ #92 ;92/255 chance of enemy spawning (freeze when no enemy spawned)
-;SPAWN_CHANCE    equ #254 ;
+NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
+;SPAWN_CHANCE    equ #92 ;92/255 chance of enemy spawning (freeze when no enemy spawned)
+SPAWN_CHANCE    equ #254 ;
 
 ENEMY_SMOL		equ #53
 ENEMY_BOSS_UL	equ #55
@@ -133,7 +133,7 @@ BORDERRIGHT      equ $2a
 ;#3f-42 - BASIC DATA address
 MAP_PTR_L        equ $3f
 MAP_PTR_H        equ $40
-;equ $41
+TEMP_PTO         equ $41
 ;equ $42
 
 
@@ -166,6 +166,8 @@ PLAYERSPEED     equ $70
 ;Higher Memory
 TEMP_PTR_L      equ $F7
 TEMP_PTR_H      equ $F8
+
+
 COLORMAP_L      equ $F9
 COLORMAP_H      equ $FA 
 CHARPOS_L       equ $FB 
@@ -180,18 +182,20 @@ COUNTDOWN       equ $FE
 BASIC_BUFFER_AREA       equ $0200
 ;char_color           equ $0200
 ;enemy status arrays
+SPAWN_X             equ $0200   ; move to zp if possible maybe use TEMP_PTR instead
+SPAWN_Y             equ $0201
   
 
 ;033c-03fb - casette buffer area
 ;feed in from graphic memory if neeeded
 ;191 bytes
 enemy_type              equ $033c
-enemy_speed             equ $033c + (NUM_ENEMIES * 1)       
-enemy_move_clock        equ $033c + (NUM_ENEMIES * 2)
-enemy_health            equ $033c + (NUM_ENEMIES * 3)  
-enemy_x                 equ $033c + (NUM_ENEMIES * 4)  
-enemy_y                 equ $033c + (NUM_ENEMIES * 5)  
-enemy_charunder         equ $033c + (NUM_ENEMIES * 6)    
+enemy_speed             equ $033c + ((NUM_ENEMIES + 1) * 1)       
+enemy_move_clock        equ $033c + ((NUM_ENEMIES + 1) * 2)
+enemy_health            equ $033c + ((NUM_ENEMIES + 1) * 3)  
+enemy_x                 equ $033c + ((NUM_ENEMIES + 1) * 4)  
+enemy_y                 equ $033c + ((NUM_ENEMIES + 1) * 5)  
+enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)           
 
 ;nonzpage 0293-029e (rs232 storage)
 PLAYERHASKEY        equ $0293  
@@ -250,17 +254,14 @@ init:
     ;values set to 1
     inx
     stx     JOY1_DDRA
- 
-    ;initial character under player is char_Base(1)
-    stx     CHARUNDERPLAYER
  	
     ;initial character direction is right (1)
     stx 	PLAYERDIR
     
     ;map and graphic pointers
-    lda     #MAP_START_LEVEL1_X
+    ;lda     #MAP_START_LEVEL1_X
     stx     MAPX
-    lda     #MAP_START_LEVEL1_Y
+    ;lda     #MAP_START_LEVEL1_Y
     stx     MAPY
     
     ;reset delay
@@ -270,8 +271,6 @@ init:
     sta     COUNTDOWN
     sta     PLAYERSPEED
     sta     PLAYERHEALTH
-    sta     PLAYERY
-    sta     PLAYERX
     
     ;initial volume
     lda     #$0f
@@ -286,6 +285,7 @@ init:
 ; 
 ;
     ;jsr     intro ; disable for testing
+    ;jsr     wait_fire ;debugging
     
     ;set custom character set
     lda     #$ff
@@ -293,7 +293,12 @@ init:
     
     jsr     drawBoard
     jsr     drawScreen
-    jsr     move_player_cont
+    lda     #CHAR_PLAYER
+    jsr     spawn_char
+    sty     PLAYERY
+    stx     PLAYERX
+    sta     CHARUNDERPLAYER
+
 
 ;==================================================================
 ; mainLoop
@@ -304,11 +309,19 @@ mainLoop_continue:
         
     ;these events constantly running
 
+    jsr     timer       ;timer returns countdown, branch if not 0
     jsr     playNote
     jsr     playSound
-    ldx     #0          ;move enemy 0 TODO: move all enemies
+    
+    ;ldx     #0          ;move enemy 0 TODO: move all enemies
+
+    ldx     #NUM_ENEMIES
+main_loop_move_enemy:  
     jsr     moveEnemy
-    jsr     timer       ;timer returns countdown, branch if not 0
+    dex
+    bpl     main_loop_move_enemy
+    
+    
     lda     COUNTDOWN
     bne     mainLoop
     
@@ -403,9 +416,10 @@ ending_text:
 ;a
 ;9 - draw dungeon entrance
 ;8 - draw castle
-; spawn enemies as normal <8
+
+; spawn enemies as normal <8 (can move this up if required just change code in graphics.asm
 ;7 - draw house/hut
-;6 
+;6 - spawn gold
 ;5 - spawn bbq
 ;4 - spawn key
 ;3 - 

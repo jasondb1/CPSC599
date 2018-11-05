@@ -3,34 +3,40 @@
 ; 
 ; x is enemy number
 ;
-
-
-;TODO: enemy high bit set if active and check in moveEnemy
+; return x - enemy number
 
 spawnEnemy:
 
     stx     TEMP_ENEMYNUM
     jsr     prand_newseed
     cmp     #SPAWN_CHANCE 
+    bcc     spawn_enemy_begin
+    lda     #$00
+    sta     enemy_type,x
     bcs     spawnEnemy_end
-    
-    ;TODO randomize what enemy is spawned and where
-    ldx     TEMP_ENEMYNUM
-    
-    ;TODO randomize where enemy is (check if char under is < 16)
+
+
+spawn_enemy_begin:
     lda     #54
     ora     #$80                    ;high bit makes enemy active
     sta     enemy_type,x
-    lda     #4
-    sta     enemy_y,x
-    lda     #16
+
+    jsr     spawn_char
+    pha
+    txa
+    ldx     TEMP_ENEMYNUM
     sta     enemy_x,x
+    tya
+    sta     enemy_y,x
+    pla
+    sta     enemy_charunder,x
+    
+    ;TODO; base health/strength and speed on some number
     lda     #10
     sta     enemy_health,x
     lda     #40
     sta     enemy_speed,x
     sta     enemy_move_clock,x
-    jsr     move_enemy_cont         ;place enemy on screen
 
 spawnEnemy_end:
     rts
@@ -40,6 +46,8 @@ spawnEnemy_end:
 ; moveEnemy - moves the enemy
 ;
 ; x is offset of enemy 
+;
+; return x - enemy number
 
 moveEnemy:
     
@@ -47,13 +55,14 @@ moveEnemy:
     and     #$80
     beq     move_enemy_done         
     
-    lda     enemy_move_clock,x
+    lda     enemy_move_clock,x  ;check if clock expired
     beq     move_enemy_begin
 
 move_enemy_done:
     rts
     
 move_enemy_begin:    
+    stx     TEMP_ENEMYNUM
     lda     enemy_speed,x        ;reset movement points
     sta     enemy_move_clock,x
     
@@ -66,7 +75,6 @@ move_enemy_begin:
     lda     enemy_x,x
     sty     TEMP2       ;store previous values in case of collision restore
     sta     TEMP3
-    stx     TEMP_ENEMYNUM
     tax
     pla
     jsr     put_char
@@ -100,8 +108,6 @@ move_enemy_up:
     dec     enemy_y,x
     
 move_enemy_cont:
-
-    stx     TEMP_ENEMYNUM ; needed for spawn enemies calling subroutine here
     
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
@@ -111,6 +117,7 @@ move_enemy_cont:
     jsr     get_char
     cmp     #16
     bcc     move_enemy_cont1
+    
     ldx     TEMP_ENEMYNUM
     lda     TEMP3        ;restore last coordinates of enemy
     sta     enemy_x,x
@@ -118,9 +125,10 @@ move_enemy_cont:
     sta     enemy_y,x
     ;TODO: other collision stuff here
     
-    bcs     move_enemy_cont1
+    ;bcs     move_enemy_cont1
 
 move_enemy_cont1:
+    ldx     TEMP_ENEMYNUM
     ;draw enemy in new position
     lda     enemy_type,x
     pha

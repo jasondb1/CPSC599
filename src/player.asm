@@ -13,7 +13,7 @@ move_player_start:
     ;replace background tile under char
     ldy     PLAYERY
     ldx     PLAYERX
-    sty     TEMP2       ;store previous values in case of collission restore
+    sty     TEMP2       ;store previous values in case of collision restore
     stx     TEMP3
     
     lda     CHARUNDERPLAYER
@@ -106,11 +106,9 @@ move_player_draw_char:
     ldx     PLAYERX
 
     lda 	PLAYERDIR
-    cmp 	#$01
-
-    bne 	move_player_direction_l
+    beq 	move_player_direction_l
     lda 	#CHAR_PLAYER 				;facing right
-    jmp 	move_player_direction_done
+    bne 	move_player_direction_done
 
 move_player_direction_l:
     lda     #CHAR_PLAYER_L 				;facing left
@@ -154,7 +152,7 @@ check_items_check_item1:
     sta     MAPY
     
     lda     #2  
-    sta     char_color + 1
+    sta     char_color+1
     
     jsr     drawBoard           ;redraw the board
     jmp     check_items_end
@@ -171,7 +169,7 @@ check_items_item2:
     lda     #4
     sta     PLAYERX
     sta     PLAYERY
-    sta     char_color + 1
+    sta     char_color+1
     
     lda     #MAP_START_LEVEL3_X
     sta     MAPX
