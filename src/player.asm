@@ -25,7 +25,7 @@ move_player_left:
     asl 
     bcc     move_player_right
     dec     PLAYERX
-    ldy 	#$00
+    ldy 	#LEFT
     sty 	PLAYERDIR
     
     ;check if player off screen, change map and reset player column
@@ -41,7 +41,7 @@ move_player_right:
     asl     
     bcc    	move_player_down
     inc    	PLAYERX
-    ldy 	#$01
+    ldy 	#RIGHT
     sty 	PLAYERDIR
     
     ;check if player off screen, change map and reset player column
@@ -58,6 +58,10 @@ move_player_down:
     bcc     move_player_up
     inc     PLAYERY
     
+    ;enable when implemented
+    ;ldy 	#DOWN
+    ;sty 	PLAYERDIR
+    
     ;check if player off screen, change map and reset player row
     ldy     #SCREENBOTTOM+1
     cpy     PLAYERY
@@ -71,6 +75,10 @@ move_player_up:
     asl     
     bcc     move_player_cont
     dec     PLAYERY
+    
+    ;enable when implemented
+    ;ldy 	#UP
+    ;sty 	PLAYERDIR
     
     ;check if player off screen, change map and reset player row
     ldy     #SCREENTOP-1
@@ -89,7 +97,7 @@ move_player_cont:
     ldy     PLAYERY
     ldx     PLAYERX
     jsr     get_char
-    cmp     #16
+    cmp     #WALKABLE
     bcc     move_player_check_items
     lda     TEMP3        ;restore last coordinates of player
     sta     PLAYERX
@@ -106,9 +114,10 @@ move_player_draw_char:
     ldx     PLAYERX
 
     lda 	PLAYERDIR
-    beq 	move_player_direction_l
-    lda 	#CHAR_PLAYER 				;facing right
-    bne 	move_player_direction_done
+    asl
+    bcs 	move_player_direction_l
+    lda 	#CHAR_PLAYER_R				;facing right
+    bcc 	move_player_direction_done
 
 move_player_direction_l:
     lda     #CHAR_PLAYER_L 				;facing left
@@ -151,6 +160,12 @@ check_items_check_item1:
     lda     #MAP_START_LEVEL2_Y
     sta     MAPY
     
+    ; need to swap base tiles
+    
+    ;lda     #CHAR_BASE_CASTLE
+    ;sta     CHAR_BASE
+    lda     #CHAR_BORDER_CASTLE
+    sta     CHAR_BORDER
     lda     #2  
     sta     char_color+1
     
@@ -170,6 +185,8 @@ check_items_item2:
     sta     PLAYERX
     sta     PLAYERY
     sta     char_color+1
+    lda     #1
+    sta     char_color+24
     
     lda     #MAP_START_LEVEL3_X
     sta     MAPX
@@ -214,10 +231,116 @@ check_items_end:
 
 
 ;==================================================================
+; player_attack - performs attack
+;
+;
+;
+player_attack:
+
+    lda     ATTACK_ACTIVE
+    bne     player_attack_end
+    ;get direction
+    lda     PLAYERDIR
+    asl
+    bcs     player_attack_left
+    asl
+    bcs     player_attack_right
+    
+    ;TODO: implement down and up attack
+player_attack_down:
+player_attack_up:
+player_attack_right:
+    ldx     PLAYERX
+    inx
+    ldy     PLAYERY
+    bne     player_attack_cont
+
+player_attack_left:
+    ldx     PLAYERX
+    dex
+    ldy     PLAYERY
+    bne     player_attack_cont
+    
+player_attack_cont:
+    stx     ATTACK_X
+    sty     ATTACK_Y
+    jsr     get_char        ;values must be between 44 and 55, could expand if required
+    sta     ATTACK_CHARUNDER
+    cmp     #56
+    bcs     player_attack_miss
+    cmp     #44
+    bcs     player_attack_hit
+    
+
+player_attack_miss:
+    jsr     activate_attack
+    ;else miss    
+    lda     #$f0        ;miss noise
+    sta     VOICE1
+    lda     #$04
+    sta     V1DURATION
+    
+    lda     #CHAR_SWORD_R
+    bcc     player_attack_cont1
+    
+player_attack_hit:
+    tay                 ;store character underneath in 
+    lda     #$e0        ;hit noise
+    sta     NOISE
+    lda     #$08
+    sta     VNDURATION
+    
+    ;TODO: decide on damage and if enemy is killed or not
+    ldx     ATTACK_X
+    ldy     ATTACK_Y
+    jsr     enemy_at
+
+
+    
+player_attack_enemy_killed:
+    ;TODO: drop stuff? reduce health instead of just killing,  something else?
+    lda     #$00            ;deactivate enemy
+    sta     enemy_type,x
+    
+    inc     ENEMY_KILLED_L
+    bne     player_attack_cont3
+    inc     ENEMY_KILLED_H
+    bne     player_attack_cont3
+    
+player_attack_cont2:
+    ;enemy not killed
+    jsr     activate_attack
+
+player_attack_cont3:
+    lda     #CHAR_SPLAT
+    
+player_attack_cont1:
+    ldy     ATTACK_Y
+    ldx     ATTACK_X
+    jsr     put_char
+
+player_attack_end:
+    rts
+    
+;==================================================================
+; activate_attack
+;
+;   common code for attack activation
+;
+
+activate_attack:
+    inc     ATTACK_ACTIVE
+    lda     #PLAYERSPEED
+    lsr
+    lsr
+    sta     ATTACKDURATION
+    rts
+
+;==================================================================
 ; replace_base_char - replace character under player to base character
 ;
 replace_base_char:
-    lda     #CHAR_BASE
+    lda     CHAR_BASE
     ldx     PLAYERX
     ldy     PLAYERY
     jsr     put_char
@@ -228,8 +351,8 @@ replace_base_char:
 ; add_gold - adds an amount of gold to player
 ; note - use bcd numbers
 ;
-; a - amount of gold or cal random gold
-
+; a - amount of gold 
+;     or add random gold
 
 add_gold_rand:
     jsr     prand

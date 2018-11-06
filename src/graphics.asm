@@ -28,7 +28,7 @@ update_status_health:
 	lda		#GREEN
 	sta		COLORMAPSTATUS+40
 
-    ;money
+    ;display money
     lda     #YELLOW
     sta     COLORMAPSTATUS+24
     
@@ -113,7 +113,7 @@ drawScreen_loop
     sta     SCREENSTATUS+34
     
     ;health bar icon
-	lda		#19
+	lda		#CHAR_SOLID
 	sta		SCREENSTATUS+36
 	sta		SCREENSTATUS+37
 	sta		SCREENSTATUS+38
@@ -151,8 +151,8 @@ drawBoard:
     sta     MAP_PTR_H
     lda     (MAP_PTR_L),y  
     sta     TEMP10      ;this holds map_data also used at end of subroutine
-    ldy     #CHAR_BASE
-    ldx     #CHAR_BORDER
+    ldy     CHAR_BASE
+    ldx     CHAR_BORDER
 
 ;load character for border
 drawBoard_border_left:
@@ -222,13 +222,13 @@ drawBoard_inner:
     lda     TEMP20              ;column
     cmp     #SCREENLEFT + 2
     bcs     drawBoard_test_border_top_cont
-    lda     #CHAR_BORDER
+    lda     CHAR_BORDER
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_top_cont:
     cmp     #SCREENRIGHT - 1
     bcc     drawBoard_test_border_top_cont1
-    lda     #CHAR_BORDER
+    lda     CHAR_BORDER
     bcs     drawBoard_to_screen
     
 drawBoard_test_border_top_cont1:        
@@ -243,13 +243,13 @@ drawBoard_test_border_bottom:
     lda     TEMP20              ;column
     cmp     #SCREENLEFT + 2
     bcs     drawBoard_test_border_bottom_cont
-    lda     #CHAR_BORDER
+    lda     CHAR_BORDER
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_bottom_cont:
     cmp     #SCREENRIGHT - 1
     bcc     drawBoard_test_border_bottom_cont1
-    lda     #CHAR_BORDER
+    lda     CHAR_BORDER
     bcs     drawBoard_to_screen
     
 drawBoard_test_border_bottom_cont1:            
@@ -279,7 +279,7 @@ drawBoard_test_random_elements:
     jmp     drawBoard_to_screen
 
 drawBoard_base_char:
-    lda     #CHAR_BASE
+    lda     CHAR_BASE
     
 drawBoard_to_screen: 
     sta     (CHARPOS_L),y
@@ -301,9 +301,11 @@ drawBoard_inner_cont:
     ;end of inner loop
     
     dec     TEMP1                   ;this is the counter for outer loop iterations
-    bne     drawBoard_outer
+    beq     drawBoard_other
+    jmp     drawBoard_outer
     ;end of outer loop
     
+drawBoard_other:
     ;draw other board elements like castles houses, etc here
     lda     #$0f
     and     TEMP10                  ;map data only use high bits to determine what else is drawn
@@ -503,6 +505,23 @@ get_char_cont:
     
 get_char_end:    
     rts    
+
+;==================================================================
+; animateAttack - resolve attack animations
+animateAttack:
+
+    lda     ATTACKDURATION
+    bne     animateAttack_end
+    lda     ATTACK_ACTIVE
+    beq     animateAttack_end
+    lda     ATTACK_CHARUNDER
+    ldx     ATTACK_X
+    ldy     ATTACK_Y
+    jsr     put_char
+    dec     ATTACK_ACTIVE
+    
+animateAttack_end:
+    rts
 
 ;==================================================================
 ; mirror_char - mirrors the character in a and changes char in memory

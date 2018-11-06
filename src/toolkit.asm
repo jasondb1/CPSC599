@@ -18,8 +18,9 @@ timer:
     lda     PREVJIFFY
     cmp     JCLOCKL
     beq     timer_end
-    inc     PREVJIFFY      
-    dec     V2DURATION   ;  decrement duration of note each jiffy ;
+    inc     PREVJIFFY    
+    dec     ATTACKDURATION  
+    dec     V2DURATION    ;  decrement duration of note each jiffy ;
     dec     V1DURATION    ; decrement duration of note each jiffy
     dec     V3DURATION    ; decrement duration of note each jiffy
     dec     VNDURATION    ; decrement duration of note each jiffy
@@ -104,11 +105,8 @@ test_fire:
     bit     JOY1_REGA
     bne     test_right
     ;do something if fire
-    
-    lda     #$e0
-    sta     NOISE
-    lda     #$02
-    sta     VNDURATION
+    jsr     player_attack
+    jmp     readJoy_end
     
 test_right:    
     lda     #$7F
@@ -136,11 +134,13 @@ test_down:
 test_up: 
     lda     #$04         ;test right button
     bit     JOY1_REGA
-    bne     cont_rj
+    bne     readJoy_cont
     ldx     #UP
 
-cont_rj:
+readJoy_cont:
     jsr     movePlayer
+    
+readJoy_end:
     rts
         
 ;==================================================================

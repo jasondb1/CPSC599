@@ -41,31 +41,48 @@ LOAD            equ $ffd5
 
 ;Graphics related
 ;parts of the playing area
-SCRROWS         equ 23
-SCRCOLS         equ 22
+SCRROWS         equ #23
+SCRCOLS         equ #22
 
-SCREENLEFT      equ 1      ;screen starts at 1,1
-SCREENTOP       equ 1
-SCREENRIGHT     equ 22
-SCREENBOTTOM    equ 21
-CHAR_BLANK      equ #00
-CHAR_BASE       equ #01
-CHAR_PLAYER     equ #63
-CHAR_PLAYER_L	equ #59
-CHAR_BORDER     equ #20
+SCREENLEFT      equ #1      ;screen starts at 1,1
+SCREENTOP       equ #1
+SCREENRIGHT     equ #22
+SCREENBOTTOM    equ #21
 
-GOLD_CHANCE     equ #250     ;chance of spawning gold
+;background
+WALKABLE            equ #23 ; everything below this value can be walked on
+CHAR_BLANK          equ #00
+CHAR_SOLID          equ #42
+CHAR_BASE_CASTLE    equ #22
+CHAR_BORDER_CASTLE  equ #24
+CHAR_BASE_FOREST    equ #1
+CHAR_BORDER_FOREST  equ #23
+
+;sprites
+CHAR_PLAYER_R   equ #63
+CHAR_PLAYER_L   equ #62
+CHAR_PLAYER_U	equ #61
+CHAR_PLAYER_D	equ #60
+CHAR_SWORD_R    equ #59
+CHAR_SWORD_L    equ #58
+CHAR_SWORD_U    equ #57
+CHAR_SWORD_D    equ #56
+
+CHAR_SPLAT      equ #15
+
+GOLD_CHANCE     equ #150     ;chance of spawning gold
+HEALTH_CHANCE   equ #70      ;chance of spawning health
 
 ;enemy related
 NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
 SPAWN_CHANCE    equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
 ;SPAWN_CHANCE    equ #254 ;
 
-ENEMY_SMOL		equ #53
-ENEMY_BOSS_UL	equ #55
-ENEMY_BOSS_UR	equ #56
-ENEMY_BOSS_LL	equ #57
-ENEMY_BOSS_LR	equ #58
+ENEMY_SMOL		    equ #53
+ENEMY_BOSS_UL	    equ #55
+ENEMY_BOSS_UR	    equ #56
+ENEMY_BOSS_LL	    equ #57
+ENEMY_BOSS_LR	    equ #58
 
 ;movement map related
 UP                  equ #$10
@@ -120,7 +137,10 @@ JCLOCKL         equ $00a2
 CHARSET         equ $1c00
 CHARSETSELECT   equ $9005
 
+;BASIC RAND SEED $8B-$8F
 RANDSEED        equ $8b
+ATTACKDURATION  equ $8e
+ATTACK_ACTIVE   equ $8f
 
 ;===================================================================
 ; User Defined Memory locations
@@ -160,7 +180,7 @@ V2DURATION      equ $6a
 V3DURATION      equ $6b
 VNDURATION      equ $6c
 
-;TIMERRESOLUTION equ $6d ; no longer used, can use for something else
+;FREE  equ $6d
 NOTEDURATION    equ $6e
 CURRENTNOTE     equ $6f
 PLAYERSPEED     equ $70
@@ -180,12 +200,8 @@ COUNTDOWN       equ $FE
 ;88 bytes should be usable for some stuff once program running
 ;0200-0258        512-600        BASIC input buffer--where the charac-
 ;                                   ters being INPUT will go.
-BASIC_BUFFER_AREA       equ $0200
-;enemy status arrays
-SPAWN_X             equ $0200   ; move to zp if possible maybe use TEMP_PTR instead
-SPAWN_Y             equ $0201
-TEMPVAR			    equ $0202
-TEMP_ENEMYNUM       equ $0203
+BASIC_BUFFER_AREA   equ $0200
+
 
 ;033c-03fb - casette buffer area
 ;feed in from graphic memory if neeeded
@@ -196,24 +212,37 @@ enemy_move_clock        equ $033c + ((NUM_ENEMIES + 1) * 2)
 enemy_health            equ $033c + ((NUM_ENEMIES + 1) * 3)  
 enemy_x                 equ $033c + ((NUM_ENEMIES + 1) * 4)  
 enemy_y                 equ $033c + ((NUM_ENEMIES + 1) * 5)  
-enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)           
+enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)  
+ATTACK_CHARUNDER        equ $033c + ((NUM_ENEMIES + 1) * 7)      
+ATTACK_X                equ ATTACK_CHARUNDER + 1
+ATTACK_Y                equ ATTACK_X + 1  
+ENEMY_KILLED_L          equ ATTACK_Y + 1
+ENEMY_KILLED_H          equ ATTACK_Y + 2 
+SPAWN_X                 equ ENEMY_KILLED_H + 1
+SPAWN_Y                 equ ENEMY_KILLED_H + 2
+TEMPVAR			        equ ENEMY_KILLED_H + 3
+TEMP_ENEMYNUM           equ ENEMY_KILLED_H + 4
+CHAR_BORDER             equ ENEMY_KILLED_H + 5
+CHAR_BASE               equ ENEMY_KILLED_H + 6
 
-;nonzpage 0293-029e (rs232 storage)
-PLAYERHASKEY        equ $0293  
-PLAYERWEAPONDAMAGE  equ $0294
-CHARUNDERPLAYER     equ $0295 
-PLAYERGOLD_H        equ $0296       ;BCD number
-PLAYERGOLD_L        equ $0297       ;BCD number
-PLAYERY             equ $0298 
-PLAYERX             equ $0299 
-PLAYERDIR		    equ	$029a
+PLAYERHASKEY            equ $03f0  
+PLAYERWEAPONDAMAGE      equ $03f1
+CHARUNDERPLAYER         equ $03f2 
+PLAYERGOLD_H            equ $03f3       ;BCD number
+PLAYERGOLD_L            equ $03f4       ;BCD number
+PLAYERY                 equ $03f5 
+PLAYERX                 equ $03f6 
+PLAYERDIR		        equ	$03f7
 
-MAPX                equ $029b;
-MAPY                equ $029c;
+MAPX                    equ $03f8
+MAPY                    equ $03f9
 
-PLAYERHEALTH        equ $029d
+PLAYERHEALTH            equ $03fa
 
-GAMEOVER            equ $029e
+GAMEOVER                equ $03fb
+
+;nonzpage 0293-029e (rs232 storage) available for use
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -237,34 +266,37 @@ init:
     lda     #8
     sta     $900f
     
-    ;music/voice settings
-    ldx     #$00
-    stx     CURRENTNOTE
-    stx     NOTEDURATION
-    stx     PREVJIFFY
-    stx     GAMEOVER
+    ;0 initial values
+    lda     #$00
+    ldx     #$bf
+init_loop1:
+    sta     $033c,x
+    dex
+    bne     init_loop1     
     
-    ;player settings
-    stx     PLAYERGOLD_L
-    stx     PLAYERGOLD_H
-    stx     PLAYERHASKEY
+    sta     CURRENTNOTE
+    sta     NOTEDURATION
+    sta     ATTACK_ACTIVE
     
     ;pointer settings
-    stx     CHARPOS_L
-    stx     COLORMAP_L
+    sta     CHARPOS_L
+    sta     COLORMAP_L
     
     ;values set to 1
-    inx
-    stx     JOY1_DDRA
- 	
+    lda     #1
+    sta     JOY1_DDRA
+ 	sta     CHAR_BASE
+    
     ;initial character direction is right (1)
-    stx 	PLAYERDIR
+    sta 	PLAYERDIR
+    
+    
     
     ;map and graphic pointers
     ;lda     #MAP_START_LEVEL1_X
-    stx     MAPX
+    sta     MAPX
     ;lda     #MAP_START_LEVEL1_Y
-    stx     MAPY
+    sta     MAPY
     
     ;reset delay
     lda     #10 ;set countdown timer 15 jiffys (resolution 1 jiffy)
@@ -274,6 +306,9 @@ init:
     sta     PLAYERSPEED
     sta     PLAYERHEALTH
     
+    ;values set to $20
+    lda     #23
+    sta     CHAR_BORDER 
     ;initial volume
     lda     #$0f
     sta     VOLUME
@@ -295,7 +330,7 @@ init:
     
     jsr     drawBoard
     jsr     drawScreen
-    lda     #CHAR_PLAYER
+    lda     #CHAR_PLAYER_R
     jsr     spawn_char
     sty     PLAYERY
     stx     PLAYERX
@@ -314,6 +349,7 @@ mainLoop_continue:
     jsr     timer       ;timer returns countdown, branch if not 0
     jsr     playNote
     jsr     playSound
+    jsr     animateAttack
 
     ldx     #NUM_ENEMIES
 main_loop_move_enemy:  
@@ -512,14 +548,14 @@ duration: dc.b  16,  16,  32,  16,  16,  32,   8,   8,   8,   8,   8,   8,   8, 
 ;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
 ; other info can be stored in here in the top bits too
 
-char_color  dc.b 00, 05, 07, 07, 07, 07, 07, 07 ;0-7
-            dc.b 07, 02, 01, 01, 05, 05, 07, 05 ;8-15
-            dc.b 00, 05, 05, 05, 05, 03, 05, 06 ;16-23
-            dc.b 00, 05, 05, 05, 05, 05, 07, 07 ;24-31
-            dc.b 07, 07, 07, 07, 07, 07, 07, 07 ;32-39;
-            dc.b 02, 07, 02, 05, 05, 05, 05, 05 ;40-47
-            dc.b 00, 05, 05, 05, 05, 04, 04, 04 ;48-55
-            dc.b 00, 05, 05, 07, 05, 01, 07, 07 ;56-63
+char_color  dc.b 00, 05, 05, 07, 07, 07, 07, 07 ;0-7
+            dc.b 07, 02, 01, 01, 05, 05, 07, 02 ;8-15
+            dc.b 00, 05, 05, 05, 05, 03, 02, 05 ;16-23
+            dc.b 03, 03, 06, 05, 05, 05, 01, 01 ;24-31
+            dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;32-39;
+            dc.b 02, 01, 02, 06, 05, 05, 05, 05 ;40-47
+            dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;48-55
+            dc.b 01, 01, 01, 01, 07, 07, 07, 07 ;56-63
             
 ;must go last because the address is after all of this code
     include     "charset.asm"

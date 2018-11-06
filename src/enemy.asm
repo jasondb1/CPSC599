@@ -17,7 +17,7 @@ spawnEnemy:
 
 
 spawn_enemy_begin:
-    lda     #54
+    lda     #48
     ora     #$80                    ;high bit makes enemy active
     sta     enemy_type,x
 
@@ -115,7 +115,7 @@ move_enemy_cont:
     lda     enemy_x,x
     tax
     jsr     get_char
-    cmp     #16
+    cmp     #WALKABLE
     bcc     move_enemy_cont1
     
     ldx     TEMP_ENEMYNUM
@@ -147,4 +147,31 @@ move_enemy_cont1:
     sta     V1DURATION
 
 move_enemy_end:
+    rts
+
+;==================================================================
+; enemy_at - returns the index of the enemy at row/col
+;
+; y is row
+; x is col
+;
+; return x - enemy number returns $ff if not found 
+
+enemy_at:
+    stx     TEMP1
+    
+    ldx     #NUM_ENEMIES
+enemy_at_loop:  
+    lda     TEMP1
+    cmp     enemy_x,x
+    bne     enemy_at_cont
+    tya
+    cmp     enemy_y,x
+    beq     enemy_at_end
+    
+enemy_at_cont:
+    dex
+    bpl    enemy_at_loop
+
+enemy_at_end:
     rts
