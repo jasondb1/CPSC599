@@ -22,32 +22,32 @@
 ;==================================================================
 ; Constants and Kernel Routines
 
-CHROUT          equ $ffd2
-CHRIN           equ $ffcf
-GETIN           equ $ffe4 ;from keyb buffer
-PLOT            equ $fff0 ;sets if carry is set 
-SCNKEY          equ $ff9f
-RDTIM           equ $ffde
-SETTIM          equ $ffdb
-STOP            equ $ffe1
+CHROUT              equ $ffd2
+CHRIN               equ $ffcf
+GETIN               equ $ffe4 ;from keyb buffer
+PLOT                equ $fff0 ;sets if carry is set 
+SCNKEY              equ $ff9f
+RDTIM               equ $ffde
+SETTIM              equ $ffdb
+STOP                equ $ffe1
 
-CLOSE           equ $ffc3
-OPEN            equ $ffc0
-SAVE            equ $ffd8
-LOAD            equ $ffd5
+CLOSE               equ $ffc3
+OPEN                equ $ffc0
+SAVE                equ $ffd8
+LOAD                equ $ffd5
 
 ;===================================================================
 ; User Defined constants
 
 ;Graphics related
 ;parts of the playing area
-SCRROWS         equ #23
-SCRCOLS         equ #22
+SCRROWS             equ #23
+SCRCOLS             equ #22
 
-SCREENLEFT      equ #1      ;screen starts at 1,1
-SCREENTOP       equ #1
-SCREENRIGHT     equ #22
-SCREENBOTTOM    equ #21
+SCREENLEFT          equ #1      ;screen starts at 1,1
+SCREENTOP           equ #1
+SCREENRIGHT         equ #22
+SCREENBOTTOM        equ #21
 
 ;background
 WALKABLE            equ #23 ; everything below this value can be walked on
@@ -59,30 +59,30 @@ CHAR_BASE_FOREST    equ #1
 CHAR_BORDER_FOREST  equ #23
 
 ;sprites
-CHAR_PLAYER_R   equ #63
-CHAR_PLAYER_L   equ #62
-CHAR_PLAYER_U	equ #61
-CHAR_PLAYER_D	equ #60
-CHAR_SWORD_R    equ #59
-CHAR_SWORD_L    equ #58
-CHAR_SWORD_U    equ #57
-CHAR_SWORD_D    equ #56
+CHAR_PLAYER_R       equ #63
+CHAR_PLAYER_L       equ #62
+CHAR_PLAYER_U	    equ #61
+CHAR_PLAYER_D	    equ #60
+CHAR_SWORD_R        equ #59
+CHAR_SWORD_L        equ #58
+CHAR_SWORD_U        equ #57
+CHAR_SWORD_D        equ #56
 
-CHAR_SPLAT      equ #15
+CHAR_SPLAT          equ #15
 
-GOLD_CHANCE     equ #150     ;chance of spawning gold
-HEALTH_CHANCE   equ #70      ;chance of spawning health
+GOLD_CHANCE         equ #150     ;chance of spawning gold
+HEALTH_CHANCE       equ #70      ;chance of spawning health
 
 ;enemy related
-NUM_ENEMIES     equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
-SPAWN_CHANCE    equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
-;SPAWN_CHANCE    equ #254 ;
+NUM_ENEMIES         equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
+;SPAWN_CHANCE        equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
+SPAWN_CHANCE       equ #254 ;
 
 ENEMY_SMOL		    equ #53
-ENEMY_BOSS_UL	    equ #55
-ENEMY_BOSS_UR	    equ #56
-ENEMY_BOSS_LL	    equ #57
-ENEMY_BOSS_LR	    equ #58
+;FREE        	    equ #55
+;FREE               equ #56
+;FREE       	    equ #57
+;FREE               equ #58
 
 ;movement map related
 UP                  equ #$10
@@ -100,102 +100,102 @@ MAP_START_LEVEL3_Y  equ #14
 
 ;==================================================================
 ;Colors
-BLACK           equ #0
-WHITE           equ #1
-RED             equ #2
-CYAN            equ #3
-PURPLE          equ #4
-GREEN           equ #5
-BLUE            equ #6
-YELLOW          equ #7
+BLACK               equ #0
+WHITE               equ #1
+RED                 equ #2
+CYAN                equ #3
+PURPLE              equ #4
+GREEN               equ #5
+BLUE                equ #6
+YELLOW              equ #7
 
 ;===================================================================
 ; Defined Memory locations
-BASE_SCREEN     equ $1e00
-BASE_COLOR      equ $9600
+BASE_SCREEN         equ $1e00
+BASE_COLOR          equ $9600
 
-JOY1_DDRA       equ $9113 ;
-JOY1_REGA       equ $9111 ;bit 2 - up, 3 -dn, 4 - left, 5 - fire - (via #1)
-JOY1_DDRB       equ $9122
-JOY1_REGB       equ $9120 ;bit 7 - rt - (via #2)
-SCR_HOR         equ $9000
-SCR_VER         equ $9001
+JOY1_DDRA           equ $9113 ;
+JOY1_REGA           equ $9111 ;bit 2 - up, 3 -dn, 4 - left, 5 - fire - (via #1)
+JOY1_DDRB           equ $9122
+JOY1_REGB           equ $9120 ;bit 7 - rt - (via #2)
+SCR_HOR             equ $9000
+SCR_VER             equ $9001
 
-SCREENMAP       equ $1e00
-SCREENSTATUS    equ $1fcd
-COLORMAP        equ $9600
-COLORMAPSTATUS  equ $97cd
-COLORREG        equ 646
+SCREENMAP           equ $1e00
+SCREENSTATUS        equ $1fcd
+COLORMAP            equ $9600
+COLORMAPSTATUS      equ $97cd
+COLORREG            equ 646
 
-VOICE1          equ $900a
-VOICE2          equ $900b
-VOICE3          equ $900c
-NOISE           equ $900d
-VOLUME          equ $900e ;first 4 bits
+VOICE1              equ $900a
+VOICE2              equ $900b
+VOICE3              equ $900c
+NOISE               equ $900d
+VOLUME              equ $900e ;first 4 bits
 
-JCLOCKL         equ $00a2
-CHARSET         equ $1c00
-CHARSETSELECT   equ $9005
+JCLOCKL             equ $00a2
+CHARSET             equ $1c00
+CHARSETSELECT       equ $9005
 
 ;BASIC RAND SEED $8B-$8F
-RANDSEED        equ $8b
-ATTACKDURATION  equ $8e
-ATTACK_ACTIVE   equ $8f
+RANDSEED            equ $8b
+ATTACKDURATION      equ $8e
+ATTACK_ACTIVE       equ $8f
 
 ;===================================================================
 ; User Defined Memory locations
 
 ;$26-2A product area for multiplication
-TEMP10           equ $26
-BORDERTOP        equ $27
-BORDERBOTTOM     equ $28
-BORDERLEFT       equ $29
-BORDERRIGHT      equ $2a
+TEMP10              equ $26
+BORDERTOP           equ $27
+BORDERBOTTOM        equ $28
+BORDERLEFT          equ $29
+BORDERRIGHT         equ $2a
 
 ;#3f-42 - BASIC DATA address
-MAP_PTR_L        equ $3f
-MAP_PTR_H        equ $40
-TEMP_PTO         equ $41
-TEMP11           equ $42
+MAP_PTR_L           equ $3f
+MAP_PTR_H           equ $40
+TEMP_PTO            equ $41
+TEMP11              equ $42
 
 
 ;possible to use $4e-$53 (misc work area) - these will change if some rom routines called
 ;$4e-53 - misc work area note getin uses (can only use as temp area) 5f?
-TEMP1           equ $4e
-TEMP2           equ $4f
-TEMP3           equ $50
-TEMP20          equ $51
-TEMP21          equ $52
+TEMP1               equ $4e
+TEMP2               equ $4f
+TEMP3               equ $50
+TEMP20              equ $51
+TEMP21              equ $52
 
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
-CURRENTSOUND    equ $60
-V1FREQ          equ $61      ;audio
-V2FREQ          equ $62
-V3FREQ          equ $63
-VNFREQ          equ $64
-V1DURATION      equ $69
-V2DURATION      equ $6a
-V3DURATION      equ $6b
-VNDURATION      equ $6c
+CURRENTSOUND        equ $60
+V1FREQ              equ $61      ;audio
+V2FREQ              equ $62
+V3FREQ              equ $63
+VNFREQ              equ $64
+V1DURATION          equ $69
+V2DURATION          equ $6a
+V3DURATION          equ $6b
+VNDURATION          equ $6c
 
 ;FREE  equ $6d
-NOTEDURATION    equ $6e
-CURRENTNOTE     equ $6f
-PLAYERSPEED     equ $70
+NOTEDURATION        equ $6e
+CURRENTNOTE         equ $6f
+PLAYERSPEED         equ $70
 
 ;Higher Memory
-TEMP_PTR_L      equ $F7
-TEMP_PTR_H      equ $F8
+TEMP_PTR_L          equ $F7
+TEMP_PTR_H          equ $F8
 
-COLORMAP_L      equ $F9
-COLORMAP_H      equ $FA 
-CHARPOS_L       equ $FB 
-CHARPOS_H       equ $FC 
+COLORMAP_L          equ $F9
+COLORMAP_H          equ $FA 
+CHARPOS_L           equ $FB 
+CHARPOS_H           equ $FC 
 
-PREVJIFFY       equ $FD
-COUNTDOWN       equ $FE
+PREVJIFFY           equ $FD
+COUNTDOWN           equ $FE
 
 ;88 bytes should be usable for some stuff once program running
 ;0200-0258        512-600        BASIC input buffer--where the charac-
@@ -224,6 +224,16 @@ TEMPVAR			        equ ENEMY_KILLED_H + 3
 TEMP_ENEMYNUM           equ ENEMY_KILLED_H + 4
 CHAR_BORDER             equ ENEMY_KILLED_H + 5
 CHAR_BASE               equ ENEMY_KILLED_H + 6
+BOSS_ACTIVE             equ ENEMY_KILLED_H + 7
+BOSS_UL_X               equ BOSS_ACTIVE + 1
+BOSS_UR_X               equ BOSS_ACTIVE + 2
+BOSS_LL_X               equ BOSS_ACTIVE + 3
+BOSS_LR_X               equ BOSS_ACTIVE + 4
+BOSS_UL_Y               equ BOSS_ACTIVE + 5
+BOSS_UR_Y               equ BOSS_ACTIVE + 6
+BOSS_LL_Y               equ BOSS_ACTIVE + 7
+BOSS_LR_Y               equ BOSS_ACTIVE + 8
+BOSS_CHAR               equ BOSS_ACTIVE + 10
 
 PLAYERHASKEY            equ $03f0  
 PLAYERWEAPONDAMAGE      equ $03f1
@@ -351,13 +361,16 @@ mainLoop_continue:
     jsr     playSound
     jsr     animateAttack
 
-    ldx     #NUM_ENEMIES
+    ldx     #0
 main_loop_move_enemy:  
     jsr     moveEnemy
-    dex
-    bpl     main_loop_move_enemy
-    
-    
+    lda     BOSS_ACTIVE
+    bne     main_loop_move_cont
+    inx
+    cpx     #NUM_ENEMIES
+    bne     main_loop_move_enemy
+
+main_loop_move_cont:
     lda     COUNTDOWN
     bne     mainLoop
     
@@ -451,7 +464,7 @@ ending_text:
 ;b - draw river - horiz with bridge
 ;a - draw lake
 ;9 - draw dungeon entrance
-;8 - draw castle
+;8 - draw castle entrance
 ;7 - draw house/hut
 ;6 
 ;5 - spawn bbq
@@ -468,14 +481,14 @@ ending_text:
 map_data: ;                                                  <<<  forest    |  dungeon >>
 ;             1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20   21   22
     dc.b    $D4, $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50, $90, $10, $10, $10, $10, $10, $15, $10, $50
-    dc.b    $C0, $88, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+    dc.b    $Cf, $88, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $A0, $60, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $90, $10, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $a0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60, $80, $00, $00, $00, $00, $00, $00, $00, $40
-; ------forest ^^^  town vvv   
+; ------forest ^^^  castle vvv   
     dc.b    $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
@@ -553,7 +566,7 @@ char_color  dc.b 00, 05, 05, 07, 07, 07, 07, 07 ;0-7
             dc.b 00, 05, 05, 05, 05, 03, 02, 05 ;16-23
             dc.b 03, 03, 06, 05, 05, 05, 01, 01 ;24-31
             dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;32-39;
-            dc.b 02, 01, 02, 06, 05, 05, 05, 05 ;40-47
+            dc.b 02, 01, 02, 06, 03, 03, 03, 03 ;40-47
             dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;48-55
             dc.b 01, 01, 01, 01, 07, 07, 07, 07 ;56-63
             

@@ -134,6 +134,7 @@ drawScreen_loop
 
 drawBoard:
 
+    jsr     inactivate_all_enemies
    ;load map data
    ;TODO: could increment/decrement MAP_PTR in player when map moves
     lda     #<map_data
@@ -310,8 +311,16 @@ drawBoard_other:
     lda     #$0f
     and     TEMP10                  ;map data only use high bits to determine what else is drawn
     sta     TEMP10                  ;map data
+    
+    cmp     #$0f
+    bne     drawBoard_other_cont
+    jsr     spawn_boss
+    rts
+    
+drawBoard_other_cont:
     jsr     draw_other
     
+drawBoard_enemies:
     jsr     prand_newseed
     ldx     #NUM_ENEMIES
 drawBoard_end:  

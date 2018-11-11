@@ -1,9 +1,8 @@
 	org	$1c00
 	
 char_set:
-	;TODO: swap out base charset for different levels?
 	
-	;chars under 16 can be walked over/on
+	;chars under 22 can be walked over/on
 	hex 00 00 00 00 00 00 00 00 ;0 - blank
 	hex 00 10 00 40 04 00 02 00 ;1 - base landscape
 	
@@ -57,7 +56,8 @@ char_set:
 	hex ff ff ff ff ff ff ff ff ;42 - solid
 	
 	hex 18 24 24 3c 5a 3c 7e 14 ;43 - princess
-	;enemies are all above 48, can lower this as needed
+	
+	;enemies are all above 44, can lower this as needed
 	hex 00 00 10 38 7f dd fe 0d ;44 - griffen ul
 	hex 04 1a 3e d6 bc 58 b0 50 ;45 - griffen ur
 	hex 4f 3f 58 33 12 01 00 00 ;46 - griffen ll

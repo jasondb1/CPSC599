@@ -294,8 +294,6 @@ player_attack_hit:
     ldx     ATTACK_X
     ldy     ATTACK_Y
     jsr     enemy_at
-
-
     
 player_attack_enemy_killed:
     ;TODO: drop stuff? reduce health instead of just killing,  something else?
