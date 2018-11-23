@@ -73,9 +73,9 @@ char_set:
 	hex aa 55 aa 55 aa 55 aa 55 ;54
 	hex aa 55 aa 55 aa 55 aa 55 ;55
 	
-	hex 10 18 3c 18 18 18 04 00 ;56 - sword down
-	hex 00 04 18 18 18 3c 18 10 ;57 - sword up
-	hex 00 00 40 f8 7c 40 00 00 ;58 - sword left
+	hex 10 18 3c 18 18 18 08 00 ;56 - sword down
+	hex 00 08 18 18 18 3c 18 10 ;57 - sword up
+	hex 00 00 20 37 1f 20 00 00 ;58 - sword left
 	hex 00 00 40 7c f8 40 00 00 ;59 - sword right
 	hex 18 24 18 7c 76 fd dc 14 ;60 - char hero down
 	hex 18 18 3c 76 ab ad 1e 14 ;61 - char hero up

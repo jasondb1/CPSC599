@@ -5,7 +5,7 @@ update_status:
 
     ;TODO routine to print numbers such as gold
     ;TODO display weapon???
-    
+    ;jsr     drawScreen
     ;key icon 
     lda     PLAYERHASKEY
     beq     update_status_cont1
@@ -19,14 +19,26 @@ update_status_cont1:
 
 update_status_health:
 	;health bar colours
-	lda		#RED
-	sta		COLORMAPSTATUS+36
-	lda		#YELLOW
-	sta		COLORMAPSTATUS+37
-	sta		COLORMAPSTATUS+38
-	sta		COLORMAPSTATUS+39
-	lda		#GREEN
-	sta		COLORMAPSTATUS+40
+	;lda		#RED
+	;sta		COLORMAPSTATUS+36
+	;lda		#YELLOW
+	;sta		COLORMAPSTATUS+37
+	;sta		COLORMAPSTATUS+38
+	;sta		COLORMAPSTATUS+39
+	;lda		#GREEN
+	;sta		COLORMAPSTATUS+40
+    
+    ;lsr        PLAYERHEALTH ;divide player health by 2 to conserve on space
+    ;tay
+update_status_health_loop:
+    ;TODO: update color spectrum
+    ;cpy     #3
+    ;lda     #RED
+    
+    ;sta     COLORMAPSTATUS,y
+    ;dey     
+    ;bne     update_status_health_loop
+
 
     ;display money
     lda     #YELLOW
