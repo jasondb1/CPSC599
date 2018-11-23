@@ -21,13 +21,17 @@ move_player_start:
     pla
     
     ;compute move
-move_player_left:    
+move_player_left: 
     asl 
     bcc     move_player_right
+    ldx     #CHAR_SWORD_L
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_L
+    stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERX
-    ldy 	#LEFT
-    sty 	PLAYERDIR
-    
+    ldy     #LEFT
+    sty     PLAYERDIR
+
     ;check if player off screen, change map and reset player column
     ldy     #SCREENLEFT-1
     cpy     PLAYERX
@@ -39,7 +43,11 @@ move_player_left:
 
 move_player_right: 
     asl     
-    bcc    	move_player_down
+    bcc     move_player_down
+    ldx     #CHAR_SWORD_R
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_R
+    stx     PLAYER_SPRITE_CURRENT
     inc    	PLAYERX
     ldy 	#RIGHT
     sty 	PLAYERDIR
@@ -56,11 +64,15 @@ move_player_right:
 move_player_down: 
     asl    
     bcc     move_player_up
+    ldx     #CHAR_SWORD_D
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_D
+    stx     PLAYER_SPRITE_CURRENT
     inc     PLAYERY
     
     ;enable when implemented
-    ;ldy 	#DOWN
-    ;sty 	PLAYERDIR
+    ldy 	#DOWN
+    sty 	PLAYERDIR
     
     ;check if player off screen, change map and reset player row
     ldy     #SCREENBOTTOM+1
@@ -74,11 +86,15 @@ move_player_down:
 move_player_up: 
     asl     
     bcc     move_player_cont
+    ldx     #CHAR_SWORD_U
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_U
+    stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERY
     
     ;enable when implemented
-    ;ldy 	#UP
-    ;sty 	PLAYERDIR
+    ldy 	#UP
+    sty 	PLAYERDIR
     
     ;check if player off screen, change map and reset player row
     ldy     #SCREENTOP-1
@@ -113,16 +129,7 @@ move_player_draw_char:
     ldy     PLAYERY
     ldx     PLAYERX
 
-    lda 	PLAYERDIR
-    asl
-    bcs 	move_player_direction_l
-    lda 	#CHAR_PLAYER_R				;facing right
-    bcc 	move_player_direction_done
-
-move_player_direction_l:
-    lda     #CHAR_PLAYER_L 				;facing left
-
-move_player_direction_done:
+    lda     PLAYER_SPRITE_CURRENT
     jsr     put_char
     sta     CHARUNDERPLAYER
     
@@ -245,17 +252,21 @@ check_items_end:
 player_attack:
 
     lda     ATTACK_ACTIVE
-    bne     player_attack_end
-    ;get direction
+    bne     player_attack_skip
+    ;get direction (LRDU)
     lda     PLAYERDIR
     asl
     bcs     player_attack_left
     asl
     bcs     player_attack_right
+    asl
+    bcs     player_attack_down
+    asl
+    bcs     player_attack_up
     
-    ;TODO: implement down and up attack
-player_attack_down:
-player_attack_up:
+player_attack_skip:
+    rts
+
 player_attack_right:
     ldx     PLAYERX
     inx
@@ -268,6 +279,18 @@ player_attack_left:
     ldy     PLAYERY
     bne     player_attack_cont
     
+player_attack_down:
+    ldy     PLAYERY
+    iny
+    ldx     PLAYERX
+    bne     player_attack_cont
+
+player_attack_up:
+    ldy     PLAYERY
+    dey
+    ldx     PLAYERX
+    bne     player_attack_cont
+
 player_attack_cont:
     stx     ATTACK_X
     sty     ATTACK_Y
@@ -286,8 +309,9 @@ player_attack_miss:
     sta     VOICE1
     lda     #$04
     sta     V1DURATION
-    
-    lda     #CHAR_SWORD_R
+
+    ;lda     #CHAR_SWORD_R
+    lda     SWORD_SPRITE_CURRENT
     bcc     player_attack_cont1
     
 player_attack_hit:
@@ -327,7 +351,8 @@ player_attack_cont1:
 player_attack_end:
     rts
     
-;==================================================================
+
+s;==================================================================
 ; activate_attack
 ;
 ;   common code for attack activation
