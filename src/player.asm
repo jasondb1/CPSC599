@@ -21,9 +21,13 @@ move_player_start:
     pla
     
     ;compute move
-move_player_left:    
+move_player_left: 
     asl 
     bcc     move_player_right
+    ldx     #CHAR_SWORD_L
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_L
+    stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERX
     ldy     #LEFT
     sty     PLAYERDIR
@@ -35,13 +39,15 @@ move_player_left:
     dec     MAPX
     ldy     #SCREENRIGHT
     sty     PLAYERX
-    lda     #CHAR_SWORD_L
-    sta     SWORD_SPRITE_CURRENT
     jmp     move_player_draw_board
 
 move_player_right: 
     asl     
-    bcc    	move_player_down
+    bcc     move_player_down
+    ldx     #CHAR_SWORD_R
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_R
+    stx     PLAYER_SPRITE_CURRENT
     inc    	PLAYERX
     ldy 	#RIGHT
     sty 	PLAYERDIR
@@ -53,13 +59,15 @@ move_player_right:
     inc     MAPX
     ldy     #SCREENLEFT
     sty     PLAYERX
-    ;lda     #CHAR_SWORD_R
-    ;sta     SWORD_SPRITE_CURRENT
     jmp     move_player_draw_board
     
 move_player_down: 
     asl    
     bcc     move_player_up
+    ldx     #CHAR_SWORD_D
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_D
+    stx     PLAYER_SPRITE_CURRENT
     inc     PLAYERY
     
     ;enable when implemented
@@ -73,13 +81,15 @@ move_player_down:
     inc     MAPY
     ldy     #SCREENTOP
     sty     PLAYERY
-    ;lda     #CHAR_SWORD_D
-    ;sta     SWORD_SPRITE_CURRENT
     jmp     move_player_draw_board
     
 move_player_up: 
     asl     
     bcc     move_player_cont
+    ldx     #CHAR_SWORD_U
+    stx     SWORD_SPRITE_CURRENT
+    ldx     #CHAR_PLAYER_U
+    stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERY
     
     ;enable when implemented
@@ -93,8 +103,6 @@ move_player_up:
     dec     MAPY
     ldy     #SCREENBOTTOM
     sty     PLAYERY
-    ;lda     #CHAR_SWORD_U
-    ;sta     SWORD_SPRITE_CURRENT
 
 move_player_draw_board:
     jsr     drawBoard
@@ -121,16 +129,7 @@ move_player_draw_char:
     ldy     PLAYERY
     ldx     PLAYERX
 
-    lda 	PLAYERDIR
-    asl
-    bcs 	move_player_direction_l
-    lda 	#CHAR_PLAYER_R				;facing right
-    bcc 	move_player_direction_done
-
-move_player_direction_l:
-    lda     #CHAR_PLAYER_L 				;facing left
-
-move_player_direction_done:
+    lda     PLAYER_SPRITE_CURRENT
     jsr     put_char
     sta     CHARUNDERPLAYER
     

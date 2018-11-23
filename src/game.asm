@@ -235,6 +235,7 @@ BOSS_LL_Y               equ BOSS_ACTIVE + 7
 BOSS_LR_Y               equ BOSS_ACTIVE + 8
 BOSS_CHAR               equ BOSS_ACTIVE + 10
 
+PLAYER_SPRITE_CURRENT   equ $03ee
 SWORD_SPRITE_CURRENT    equ $03ef
 
 PLAYERHASKEY            equ $03f0  
