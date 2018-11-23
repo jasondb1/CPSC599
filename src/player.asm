@@ -363,6 +363,7 @@ activate_attack:
     lda     #PLAYERSPEED
     lsr
     lsr
+    lsr
     sta     ATTACKDURATION
     rts
 
