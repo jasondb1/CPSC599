@@ -17,27 +17,31 @@ update_status_cont1:
     lda     #BLACK
     sta     COLORMAPSTATUS + 31
 
-update_status_health:
-	;health bar colours
-	;lda		#RED
-	;sta		COLORMAPSTATUS+36
-	;lda		#YELLOW
-	;sta		COLORMAPSTATUS+37
-	;sta		COLORMAPSTATUS+38
-	;sta		COLORMAPSTATUS+39
-	;lda		#GREEN
-	;sta		COLORMAPSTATUS+40
-    
-    ;lsr        PLAYERHEALTH ;divide player health by 2 to conserve on space
-    ;tay
+update_status_health:    
+    lsr        PLAYERHEALTH ;divide player health by 2 to conserve on space
+    tay
 update_status_health_loop:
     ;TODO: update color spectrum
     ;cpy     #3
     ;lda     #RED
     
+    lda         #CHAR_SOLID
+    sta         SCREENSTATUS+36,y
+    lda         #RED
+    sta         COLORMAPSTATUS+36,y
+    
+        ;health bar icon
+	;lda		#CHAR_SOLID
+	;sta		SCREENSTATUS+36
+	;sta		SCREENSTATUS+37
+	;sta		SCREENSTATUS+38
+	;sta		SCREENSTATUS+39
+    ;sta		SCREENSTATUS+40
+    
+    
     ;sta     COLORMAPSTATUS,y
-    ;dey     
-    ;bne     update_status_health_loop
+    dey     
+    bne     update_status_health_loop
 
 
     ;display money
@@ -125,12 +129,12 @@ drawScreen_loop
     sta     SCREENSTATUS+34
     
     ;health bar icon
-	lda		#CHAR_SOLID
-	sta		SCREENSTATUS+36
-	sta		SCREENSTATUS+37
-	sta		SCREENSTATUS+38
-	sta		SCREENSTATUS+39
-    sta		SCREENSTATUS+40
+	;lda		#CHAR_SOLID
+	;sta		SCREENSTATUS+36
+	;sta		SCREENSTATUS+37
+	;sta		SCREENSTATUS+38
+	;sta		SCREENSTATUS+39
+    ;sta		SCREENSTATUS+40
     
     ;color gold and health icons
     lda     #14
