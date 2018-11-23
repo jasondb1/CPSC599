@@ -26,11 +26,11 @@ char_set:
 	hex 00 3c 7e 7e 7e 7e 3c 00 ;14 - coin
 	hex 09 a2 2c 7c 5e 76 3c 84 ;15 - splat
 	hex aa 55 aa 55 aa 55 aa 55 ;16 - path?
-	hex aa 55 aa 55 aa 55 aa 55 ;17
+	hex aa 55 aa 55 aa 55 aa 55 ;17 - 
 	hex aa 55 aa 55 aa 55 aa 55 ;18
 	hex aa 55 aa 55 aa 55 aa 55 ;19
 	hex aa 55 aa 55 aa 55 aa 55 ;20
-	hex aa 55 aa 55 aa 55 aa 55 ;21
+	hex 00 18 18 7e 7e 18 18 00 ;21 - +
 	hex 44 44 44 7c 44 44 c7 44 ;22 - base - brick
 
 	hex	3e 6b 7f 6f 36 0c 14 3a ;23 - tree (border element)
@@ -51,7 +51,7 @@ char_set:
 	hex 7e 42 04 08 10 10 10 00 ;37 - 7
 	hex 3c 42 42 3c 42 42 3c 00 ;38 - 8
 	hex 3c 42 42 3e 02 04 38 00 ;39 - 9
-	hex 00 18 18 7e 7e 18 18 00 ;40 - +
+	hex 00 00 00 00 00 00 00 00 ;40 - 
 	hex 00 00 00 18 18 00 00 00 ;41 - projectile (dot)
 	hex ff ff ff ff ff ff ff ff ;42 - solid
 	
@@ -73,12 +73,12 @@ char_set:
 	hex aa 55 aa 55 aa 55 aa 55 ;54
 	hex aa 55 aa 55 aa 55 aa 55 ;55
 	
-	hex 00 00 40 7c f8 40 00 00 ;56 - sword down
-	hex 00 00 40 7c f8 40 00 00 ;57 - sword up
-	hex 00 00 40 7c f8 40 00 00 ;58 - sword left
+	hex 10 18 3c 18 18 18 04 00 ;56 - sword down
+	hex 00 04 18 18 18 3c 18 10 ;57 - sword up
+	hex 00 00 40 f8 7c 40 00 00 ;58 - sword left
 	hex 00 00 40 7c f8 40 00 00 ;59 - sword right
-	hex 18 2e 18 bc 5a 14 2a 36 ;60 - char hero down
-	hex aa 55 aa 55 aa 55 aa 55 ;61 - char hero up
+	hex 18 24 18 7c 76 fd dc 14 ;60 - char hero down
+	hex 18 18 3c 76 ab ad 1e 14 ;61 - char hero up
 	hex 18 2e 18 bc 5a 14 2a 36 ;62 - char hero left
 	hex	18 74 18 3d 5a 28 54 6c ;63 - char hero right
 

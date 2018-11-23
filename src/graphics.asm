@@ -109,7 +109,7 @@ drawScreen_loop
     sta     SCREENSTATUS + 31
         
     ;health indicator icon
-    lda     #40
+    lda     #21
     sta     SCREENSTATUS+34
     
     ;health bar icon
@@ -393,8 +393,15 @@ draw_other_bbq:
 draw_other_gold:
     jsr     prand
     cmp     #GOLD_CHANCE 
-    bcs     draw_other_end
+    bcs     draw_other_health
     lda     #14
+    jsr     spawn_char
+    
+draw_other_health:
+    jsr     prand
+    cmp     #HEALTH_CHANCE 
+    bcs     draw_other_end
+    lda     #21
     jsr     spawn_char
     
     
