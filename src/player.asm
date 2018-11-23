@@ -229,10 +229,17 @@ check_items_item5:
 check_items_item6:
     ;found bbq
     cmp     #9
-    bne     check_items_end
+    bne     check_items_item7
     ;Pickup BBQ
     lda     #1
     sta     GAMEOVER
+    
+check_items_item7:
+    ;found health
+    cmp     #21
+    bne     check_items_end
+    jsr     replace_base_char
+    inc     PLAYERHEALTH
     
 check_items_end:
     rts
