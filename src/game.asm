@@ -235,6 +235,8 @@ BOSS_LL_Y               equ BOSS_ACTIVE + 7
 BOSS_LR_Y               equ BOSS_ACTIVE + 8
 BOSS_CHAR               equ BOSS_ACTIVE + 10
 
+SWORD_SPRITE_CURRENT    equ $03ef
+
 PLAYERHASKEY            equ $03f0  
 PLAYERWEAPONDAMAGE      equ $03f1
 CHARUNDERPLAYER         equ $03f2 
@@ -440,7 +442,7 @@ ending_text:
 ;lower 4 bits are for other information such as if castle is on screen, boss, or other data
 ;
 ;
-;lower bits:
+;upper bits:
 ; exits set bits 0000 - all 4 sides open, 1111 - all sides closed,  
 ; $8-L, $4-R, $2-B $1-T    BORDER SIDES BITS to set
 ; $f - all sides (maybe useful for a pit or boss?
@@ -456,7 +458,7 @@ ending_text:
 ; 3 sides
 ; $D - Opening Bottom; $E - Opening Top; $7 - Opening Left; $B - Opening Right
 
-;upper bits:
+;lower bits:
 ;f - spawn boss (do not spawn other enemies?)
 ;e 
 ; spawn enemies as normal <14 (can move this up or down if required just change code in graphics.asm
