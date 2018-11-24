@@ -195,9 +195,9 @@ move_enemy_cont1:
     
     ;step sound
     lda     #$a0
-    sta     VOICE1
+    sta     VOICE3
     lda     #$2
-    sta     V1DURATION
+    sta     V3DURATION
 
 move_enemy_end:
     rts
@@ -302,9 +302,9 @@ move_boss_cont1:
     
     ;step sound
     lda     #$a0
-    sta     VOICE1
+    sta     VOICE3
     lda     #$2
-    sta     V1DURATION
+    sta     V3DURATION
 
 move_boss_end:
     rts

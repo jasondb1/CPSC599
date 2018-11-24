@@ -135,9 +135,9 @@ move_player_draw_char:
     
     ;step sound
     lda     #$a0
-    sta     VOICE1
+    sta     VOICE3
     lda     #$2
-    sta     V1DURATION
+    sta     V3DURATION
 
     jsr     update_status
 
@@ -306,9 +306,9 @@ player_attack_miss:
     jsr     activate_attack
     ;else miss    
     lda     #$f0        ;miss noise
-    sta     VOICE1
+    sta     VOICE3
     lda     #$04
-    sta     V1DURATION
+    sta     V3DURATION
 
     ;lda     #CHAR_SWORD_R
     lda     SWORD_SPRITE_CURRENT

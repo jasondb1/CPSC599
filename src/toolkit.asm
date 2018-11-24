@@ -20,8 +20,8 @@ timer:
     beq     timer_end
     inc     PREVJIFFY    
     dec     ATTACKDURATION  
-    dec     V2DURATION    ;  decrement duration of note each jiffy ;
     dec     V1DURATION    ; decrement duration of note each jiffy
+    dec     V2DURATION    ; decrement duration of note each jiffy ;
     dec     V3DURATION    ; decrement duration of note each jiffy
     dec     VNDURATION    ; decrement duration of note each jiffy
     ldx     #NUM_ENEMIES  ; number of enemies
@@ -39,11 +39,40 @@ timer_end:
     rts  
     
     
+playMusic:
+
+    lda     MUSIC_INTERVAL
+    cmp     #4
+    bmi     playMusic_body
+    lda     #0                      ;Reset the interval
+    sta     MUSIC_INTERVAL
+
+playMusic_body:
+    lda     MUSIC_INTERVAL
+    cmp     #2
+    bpl     playMusic_B
+
+playMusic_A:
+    jsr     playBass
+    jsr     playNote
+
+    jmp     playMusic_end
+
+playMusic_B:
+    lda     #0
+    sta     CURRENTNOTE
+    sta     VOICE2
+    sta     V2DURATION
+
+    jsr     playBass
+
+playMusic_end:
+    rts
+
 ;==================================================================
 ; playNote - play a note from melody, duration memory location
 
 playNote:
-
     ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
     lda     #$01
     cmp     V2DURATION
@@ -68,20 +97,55 @@ playNote_continue:
 
 playNote_silence:   ;cuts off last jiffy, to provide separation of notes
     ldy     #$0
-    stx     VOICE2
+    sty     VOICE2
 
 playNote_end:
     rts
+
+
+
+playBass:
+    ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
+    lda     #$01
+    cmp     V1DURATION
+    bmi     playBass_end
+    beq     playBass_silence
     
+    ;new note
+    ldy     CURRENTNOTE_BASS
+    lda     bMelody,y
+    cmp     #$ff            ;ff is the terminator for the melody line
+    bne     playBass_continue
+    ldy     #$0
+    sty     CURRENTNOTE_BASS     ;reset note to first note in melody
+
+    inc     MUSIC_INTERVAL
+    lda     bMelody,y
+    
+playBass_continue:    
+    sta     VOICE1
+    lda     bDuration,y
+    sta     V1DURATION
+    inc     CURRENTNOTE_BASS; this is the note index
+    rts
+
+playBass_silence:   ;cuts off last jiffy, to provide separation of notes
+    ldy     #$0
+    sty     VOICE1
+
+playBass_end:
+    rts
+
+
 ;==================================================================
 ; playSound - play a currently running sound
 
 playSound:
 
-    ;voice 1
-    lda     V1DURATION
+    ;voice 3
+    lda     V3DURATION
     bne     playSound_noise
-    sta     VOICE1
+    sta     VOICE3
     
 playSound_noise:
     lda     VNDURATION
@@ -249,3 +313,14 @@ display_text_next_char:
 
 display_text_end:
     rts
+
+
+wait_for_user_input:
+    jsr     timer
+    lda     #$20       ;test fire button
+    bit     JOY1_REGA
+    bne     wait_for_user_input
+    
+wait_for_user_input_end:
+    rts
+

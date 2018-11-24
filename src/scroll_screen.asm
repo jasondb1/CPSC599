@@ -37,6 +37,7 @@ intro_display_text:
 intro_loop:       
     ;animation timer
     jsr     playNote    ;if music is wanted for intro
+    ;jsr     playBass
     jsr     playSound
     jsr     timer
     ;lda     #$0
@@ -58,6 +59,7 @@ intro_loop:
 intro_wait:
     jsr     timer
     jsr     playNote   ;if music is wanted for intro
+    ;jsr     playBass 
     lda     #$20       ;test fire button
     bit     JOY1_REGA
     bne     intro_wait
