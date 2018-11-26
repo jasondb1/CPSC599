@@ -37,7 +37,9 @@ resetTimer:
 timer_end:
     rts  
     
-    
+
+;==================================================================
+; playMusic - controls the playing of the music
 playMusic:
 
     lda     MUSIC_INTERVAL
@@ -102,7 +104,8 @@ playNote_end:
     rts
 
 
-
+;==================================================================
+; playBass - play the bass line
 playBass:
     ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
     lda     #$01

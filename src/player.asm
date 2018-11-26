@@ -187,6 +187,8 @@ check_items_item2:
     ;TODO: check if player has key
     lda     PLAYERHASKEY
     beq     check_items_end
+    
+    ;enter new level
     dec     PLAYERHASKEY
     lda     #4
     sta     PLAYERX
@@ -310,7 +312,6 @@ player_attack_miss:
     lda     #$04
     sta     V3DURATION
 
-    ;lda     #CHAR_SWORD_R
     lda     SWORD_SPRITE_CURRENT
     bcc     player_attack_cont1
     
@@ -321,6 +322,8 @@ player_attack_hit:
     lda     #$08
     sta     VNDURATION
     
+    ;TODO: boss attack
+    
     ;TODO: decide on damage and if enemy is killed or not
     ldx     ATTACK_X
     ldy     ATTACK_Y
@@ -330,7 +333,9 @@ player_attack_enemy_killed:
     ;TODO: drop stuff? reduce health instead of just killing,  something else?
     lda     #$00            ;deactivate enemy
     sta     enemy_type,x
+
     
+    ;this counts the stats of number of enemies killed (delete if not used)
     inc     ENEMY_KILLED_L
     bne     player_attack_cont3
     inc     ENEMY_KILLED_H
@@ -339,8 +344,14 @@ player_attack_enemy_killed:
 player_attack_cont2:
     ;enemy not killed
     jsr     activate_attack
+    
 
 player_attack_cont3:
+    ;drop stuff
+    lda     #CHAR_GOLD
+    jsr     spawn_close
+    
+    ;put splat on screen
     lda     #CHAR_SPLAT
     
 player_attack_cont1:
@@ -352,7 +363,7 @@ player_attack_end:
     rts
     
 
-s;==================================================================
+;==================================================================
 ; activate_attack
 ;
 ;   common code for attack activation

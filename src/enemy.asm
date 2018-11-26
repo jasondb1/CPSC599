@@ -225,6 +225,10 @@ move_boss_cont2:
     
 move_boss_cont:
     ldx     #0
+    
+    ;TODO check collision that returns a status code - 0 no collision 1, collision with player,
+    ;collision with border or element
+    
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
     ldy     enemy_y,x
@@ -243,7 +247,7 @@ move_boss_cont:
     sta     enemy_y,x
     ;TODO: other collision stuff here
     
-    ;bcs     move_boss_cont1
+
 move_boss_cont1:
     ldx     #3
     stx     TEMP_ENEMYNUM
@@ -323,7 +327,7 @@ enemy_at_end:
 inactivate_all_enemies:
 
     lda     #00                     ;character type of enemy
-    sta     BOSS_ACTIVE  
+    sta     BOSS_ACTIVE             ;reset boss to not active
     ldx     #NUM_ENEMIES
 
 inactivate_all_enemies_loop:

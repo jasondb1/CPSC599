@@ -69,6 +69,7 @@ CHAR_SWORD_U        equ #57
 CHAR_SWORD_D        equ #56
 
 CHAR_SPLAT          equ #15
+CHAR_GOLD           equ #14
 
 GOLD_CHANCE         equ #150     ;chance of spawning gold
 HEALTH_CHANCE       equ #70      ;chance of spawning health
@@ -76,13 +77,9 @@ HEALTH_CHANCE       equ #70      ;chance of spawning health
 ;enemy related
 NUM_ENEMIES         equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
 ;SPAWN_CHANCE        equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
-SPAWN_CHANCE       equ #254 ;
+SPAWN_CHANCE       equ #254 ;debug/testing
 
 ENEMY_SMOL		    equ #53
-;FREE        	    equ #55
-;FREE               equ #56
-;FREE       	    equ #57
-;FREE               equ #58
 
 ;movement map related
 UP                  equ #$10
@@ -204,7 +201,6 @@ BASIC_BUFFER_AREA   equ $0200
 
 
 ;033c-03fb - casette buffer area
-;feed in from graphic memory if neeeded
 ;191 bytes
 enemy_type              equ $033c
 enemy_speed             equ $033c + ((NUM_ENEMIES + 1) * 1)       
