@@ -28,8 +28,7 @@ timer:
 timer_enemies:    
     dec     enemy_move_clock,x
     dex
-    cpx     #$ff
-    bne     timer_enemies
+    bpl     timer_enemies
 
 resetTimer:
     dec     COUNTDOWN

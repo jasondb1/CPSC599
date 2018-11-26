@@ -29,17 +29,7 @@ update_status_health_loop:
     sta         SCREENSTATUS+36,y
     lda         #RED
     sta         COLORMAPSTATUS+36,y
-    
-        ;health bar icon
-	;lda		#CHAR_SOLID
-	;sta		SCREENSTATUS+36
-	;sta		SCREENSTATUS+37
-	;sta		SCREENSTATUS+38
-	;sta		SCREENSTATUS+39
-    ;sta		SCREENSTATUS+40
-    
-    
-    ;sta     COLORMAPSTATUS,y
+
     dey     
     bne     update_status_health_loop
 
@@ -356,39 +346,23 @@ draw_other:
     
     cmp     #$08        ;draw Castle
     bne     draw_other_dungeon_door
-    ldx     #5          ;column
-    ldy     #6          ;row
-    lda     #21
-    jsr     put_char
     
     ldx     #6          ;column
     ldy     #6          ;row
     lda     #10
     jsr     put_char
+    jsr     draw_tower
     
-    ldx     #7          ;column
-    ldy     #6          ;row
-    lda     #21
-    jsr     put_char
-
 draw_other_dungeon_door:
     lda     TEMP10      ;map data
     cmp     #$09        ;draw dungeon entrance
     bne     draw_other_key
-    ldx     #5          ;column
-    ldy     #6          ;row
-    lda     #21
-    jsr     put_char
     
     ldx     #6          ;column
     ldy     #6          ;row
     lda     #11         ;dungeon door
     jsr     put_char
-    
-    ldx     #7          ;column
-    ldy     #6          ;row
-    lda     #21
-    jsr     put_char
+    jsr     draw_tower
 
 draw_other_key:
     lda     TEMP10      ;map data
@@ -422,6 +396,20 @@ draw_other_health:
     
     
 draw_other_end:
+    rts
+    
+    
+draw_tower:
+    ldx     #5          ;column
+    ldy     #6          ;row
+    lda     #25
+    jsr     put_char
+    
+    ldx     #7          ;column
+    ldy     #6          ;row
+    lda     #25
+    jsr     put_char
+    
     rts
     
 ;==================================================================

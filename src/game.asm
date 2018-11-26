@@ -234,6 +234,7 @@ BOSS_UR_Y               equ BOSS_ACTIVE + 6
 BOSS_LL_Y               equ BOSS_ACTIVE + 7
 BOSS_LR_Y               equ BOSS_ACTIVE + 8
 BOSS_CHAR               equ BOSS_ACTIVE + 10
+DIRECTION_TO_PLAYER     equ BOSS_ACTIVE + 11
 
 MUSIC_INTERVAL          equ $03ed
 PLAYER_SPRITE_CURRENT   equ $03ee
@@ -372,17 +373,18 @@ mainLoop_continue:
     jsr     playMusic
     jsr     playSound
     jsr     animateAttack
-
-    ldx     #0
-main_loop_move_enemy:  
-    jsr     moveEnemy
+    
     lda     BOSS_ACTIVE
     bne     main_loop_move_cont
-    inx
-    cpx     #NUM_ENEMIES
-    bne     main_loop_move_enemy
+
+    ldx     #NUM_ENEMIES
+main_loop_move_enemy:  
+    jsr     moveEnemy
+    dex
+    bpl     main_loop_move_enemy
 
 main_loop_move_cont:
+    jsr     moveBoss
     lda     COUNTDOWN
     bne     mainLoop
     
@@ -491,6 +493,8 @@ ending_text:
 ; must be 22 wide
 ; forest: 1,1 thru 13,8
 ; castle: 1,9 thru 13,16
+
+;TODO:This could be procedurally generated if space permits
 map_data: ;                                                  <<<  forest    |  dungeon >>
 ;             1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20   21   22
     dc.b    $D4, $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50, $90, $10, $10, $10, $10, $10, $15, $10, $50
@@ -525,10 +529,10 @@ map_data: ;                                                  <<<  forest    |  d
 ;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
 ; other info can be stored in here in the top bits too
 
-char_color  dc.b 00, 05, 05, 07, 07, 07, 07, 07 ;0-7
+char_color  dc.b 00, 05, 07, 03, 07, 07, 03, 07 ;0-7
             dc.b 07, 02, 01, 01, 05, 05, 07, 02 ;8-15
             dc.b 00, 05, 05, 05, 05, 02, 02, 05 ;16-23
-            dc.b 03, 03, 06, 05, 05, 05, 01, 01 ;24-31
+            dc.b 01, 01, 06, 05, 05, 05, 01, 01 ;24-31
             dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;32-39;
             dc.b 02, 01, 02, 06, 03, 03, 03, 03 ;40-47
             dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;48-55
