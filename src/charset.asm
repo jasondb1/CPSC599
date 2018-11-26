@@ -10,16 +10,17 @@ char_set:
 	hex	3e 6b 7f 6f 36 0c 14 3a ;2 - tree? maybe not necessary with tree border
 	hex	00 00 42 18 18 38 6c b4 ;3 - rock
 	hex	00 00 00 00 00 00 54 38 ;4 - grass
-	hex 00 00 00 00 00 00 00 00 ;5 - stump?
-	hex 00 00 00 00 00 00 00 00 ;6 - sign?
-	hex 00 00 00 00 00 00 00 00 ;7 - vines?
+	hex 02 52 d6 74 3c 1a 18 18 ;5 - stump
+	hex 00 7e 7e 7e 7e 18 18 18 ;6 - sign
+	hex 21 08 42 10 45 a8 02 48 ;7 - sand?
 	
 	;other landscape that can be walked on but might have action associated 
 	
 	;the following are items or non generic tiles
 	hex 18 24 24 18 08 38 08 38 ;8 - key
     hex 00 52 29 52 29 ff ff 42 ;9 - bbq
-	hex 00 18 3c 7e 7e 7e 7e 7e ;10 - door
+	;hex 00 18 3c 7e 7e 7e 7e 7e ;10 - door
+	hex 00 ff 99 bd bd b5 bd bd ;10 - door
 	hex 00 18 3c 7e 7e 7e 7e 7e ;11 - dungeon door
 	hex aa 55 aa 55 aa 55 aa 55 ;12 - bridge / tile
 	hex aa 55 aa 55 aa 55 aa 55 ;13 - wall
@@ -32,10 +33,12 @@ char_set:
 	hex aa 55 aa 55 aa 55 aa 55 ;20
 	hex 00 18 18 7e 7e 18 18 00 ;21 - +
 	hex 44 44 44 7c 44 44 c7 44 ;22 - base - brick
-
+	
+;;;;;;not walkable vvv
 	hex	3e 6b 7f 6f 36 0c 14 3a ;23 - tree (border element)
 	hex bb bb bb 83 bb bb 38 bb ;24 - wall (border element)
-	hex aa 55 aa 55 aa 55 aa 55 ;25 - castle tower
+	;hex 3c d7 ab d5 ab d5 ab ff ;25 - castle tower
+	hex c3 ff dd ab d5 ab d5 ff ;25 - alternate tower	
 	hex aa 55 aa 55 aa 55 aa 55 ;26 - water?
 	hex	00 00 00 ff ff 00 00 00 ;27 - horiz line?
 	hex	18 18 18 18 18 18 18 18 ;28 - vert line?

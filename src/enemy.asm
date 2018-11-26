@@ -131,40 +131,10 @@ move_enemy_begin:
     lda     enemy_charunder,x
     jsr     enemy_draw_tile
     
-    ;compute move of enemy - a dumb goto the player ai
-    ;TODO: smarter ai?
-move_enemy_left:    
-    lda     enemy_x,x
-    cmp     PLAYERX
-    bcc     move_enemy_right
-    beq     move_enemy_down
-    dec     enemy_x,x
-    lda     #LEFT
-    sta     TEMP11          ;stores direction
-    jmp     move_enemy_cont
-    
-move_enemy_right: 
-    inc     enemy_x,x
-    lda     #RIGHT
-    sta     TEMP11          ;stores direction
-    jmp     move_enemy_cont
-    
-move_enemy_down: 
-    lda     enemy_y,x
-    cmp     PLAYERY
-    bcs     move_enemy_up
-    inc     enemy_y,x
-    lda     #DOWN
-    sta     TEMP11          ;stores direction
-    bcc     move_enemy_cont
-    
-move_enemy_up: 
-    lda     enemy_y,x
-    cmp     PLAYERY
-    bcc     move_enemy_cont
-    lda     #UP
-    sta     TEMP11          ;stores direction
-    dec     enemy_y,x
+    ;compute next move
+    jsr     dir_to_player
+    jsr     pick_move
+    jsr     execute_move
     
 move_enemy_cont:
     
@@ -213,16 +183,19 @@ moveBoss:
     
     lda     BOSS_ACTIVE  
     beq     move_boss_done
+    ldx     #0
     lda     enemy_move_clock,x  ;check if clock expired
     beq     move_boss_begin
 
 move_boss_done:
     rts
     
-    ldx     #NUM_ENEMIES
+move_boss_begin:     
+    ldx     #3
     stx     TEMP_ENEMYNUM
     
-move_boss_begin:    
+move_boss_loop0:    
+    ;clears the area underneath the enemies
     ldx     TEMP_ENEMYNUM
     
     lda     enemy_speed,x        ;reset movement points
@@ -232,49 +205,26 @@ move_boss_begin:
     lda     enemy_charunder,x
     jsr     enemy_draw_tile
     
+    dec     TEMP_ENEMYNUM
+    bpl     move_boss_loop0
+    
+    
+    ;pick where enemy moves
+    jsr     dir_to_player
+    jsr     pick_move
+    sta     TEMP11
+    
+    ldx     #3
+move_boss_loop2:   
+    lda     TEMP11
+    jsr     execute_move
+    
+move_boss_cont2:
     dex
-    bpl     move_boss_begin
-    
-    ;compute move of enemy - a dumb goto the player ai
-    ;TODO: smarter ai?
-move_boss_left:   
-    ldx     #0 
-    lda     enemy_x,x
-    cmp     PLAYERX
-    bcc     move_boss_right
-    beq     move_boss_down
-    dec     enemy_x,x
-    
-    lda     #LEFT
-    sta     TEMP11          ;stores direction
-    jmp     move_boss_cont
-    
-move_boss_right: 
-    inc     enemy_x,x
-    lda     #RIGHT
-    sta     TEMP11          ;stores direction
-    jmp     move_boss_cont
-    
-move_boss_down: 
-    lda     enemy_y,x
-    cmp     PLAYERY
-    bcs     move_boss_up
-    inc     enemy_y,x
-    lda     #DOWN
-    sta     TEMP11          ;stores direction
-    bcc     move_boss_cont
-    
-move_boss_up: 
-    lda     enemy_y,x
-    cmp     PLAYERY
-    bcc     move_boss_cont
-    lda     #UP
-    sta     TEMP11          ;stores direction
-    dec     enemy_y,x
+    bpl     move_boss_loop2
     
 move_boss_cont:
-    
-    
+    ldx     #0
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
     ldy     enemy_y,x
@@ -284,6 +234,8 @@ move_boss_cont:
     cmp     #WALKABLE
     bcc     move_boss_cont1
     
+    
+    ;maybe if left unavailable move right up/dn etc instead of restore last
     ldx     TEMP_ENEMYNUM
     lda     TEMP3        ;restore last coordinates of enemy
     sta     enemy_x,x
@@ -292,13 +244,17 @@ move_boss_cont:
     ;TODO: other collision stuff here
     
     ;bcs     move_boss_cont1
-
 move_boss_cont1:
+    ldx     #3
+    stx     TEMP_ENEMYNUM
+move_boss_loop1:
     ldx     TEMP_ENEMYNUM
     ;draw enemy in new position
     lda     enemy_type,x
     jsr     enemy_draw_tile
-
+    
+    dec     TEMP_ENEMYNUM
+    bpl     move_boss_loop1
     
     ;step sound
     lda     #$a0
@@ -367,6 +323,7 @@ enemy_at_end:
 inactivate_all_enemies:
 
     lda     #00                     ;character type of enemy
+    sta     BOSS_ACTIVE  
     ldx     #NUM_ENEMIES
 
 inactivate_all_enemies_loop:
@@ -374,4 +331,89 @@ inactivate_all_enemies_loop:
     dex     
     bpl     inactivate_all_enemies_loop
 
+    rts
+
+;==================================================================
+; dir_to_player - direction to player
+; x - enemy number
+;
+; returns a - direction to move
+
+dir_to_player:    
+    lda     #0
+    
+    ldy     enemy_x,x
+    cpy     PLAYERX
+    bcc     dir_to_player_right
+    beq     dir_to_player_down
+    ora     #LEFT
+    bcs     dir_to_player_down
+    
+dir_to_player_right: 
+    ora     #RIGHT
+    
+dir_to_player_down: 
+    ldy     enemy_y,x
+    cpy     PLAYERY
+    bcs     dir_to_player_up
+    beq     dir_to_player_end
+    ora     #DOWN
+    bcc     dir_to_player_end
+    
+dir_to_player_up: 
+    ora     #UP
+
+dir_to_player_end:
+    sta     DIRECTION_TO_PLAYER
+    rts
+
+;==================================================================
+; pick move - determine move to take
+; a - direction to move
+;
+; returns a - direction to move
+pick_move:
+    pha     ;push direction to stack
+    lda     #$30 ; check bits 4 and 5
+    beq     pick_move_end
+    
+    jsr     prand            ;randomly choose one direction to move
+    bit     RANDSEED
+    pla
+    bvc     pick_move_cont
+    and     #$c0             ;pick left or right
+    bvs     pick_move_end
+
+pick_move_cont:
+    and     #$30             ;pick up/dn
+    
+pick_move_end:
+    rts
+
+;==================================================================
+; pick move - determine move to take
+; a - direction to move
+; x - enemy to move
+;
+execute_move:
+    asl     
+    bcc     execute_move_right
+    dec     enemy_x,x
+    
+execute_move_right:
+    asl
+    bcc     execute_move_down
+    inc     enemy_x,x
+
+execute_move_down:
+    asl
+    bcc     execute_move_up
+    inc     enemy_y,x
+    
+execute_move_up:
+    asl
+    bcc     execute_move_end
+    dec     enemy_y,x
+
+execute_move_end:
     rts
