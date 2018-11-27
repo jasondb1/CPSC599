@@ -292,11 +292,11 @@ prand_end:
 ;    beq     loop_kw
 ;    rts
     
-wait_fire:
-    lda     #$20         ;test fire button
-    bit     JOY1_REGA
-    bne     wait_fire   
-    rts
+;wait_fire:
+;    lda     #$20         ;test fire button
+;    bit     JOY1_REGA
+;    bne     wait_fire   
+;    rts
 
 ;==================================================================
 ; display_text - displays the text in TEMP_PTR_L
@@ -316,9 +316,11 @@ display_text_next_char:
 display_text_end:
     rts
 
-
 wait_for_user_input:
     jsr     timer
+    jsr     playNote   ;if music is wanted for intro
+    ;jsr     playBass 
+    jsr     playSound
     lda     #$20       ;test fire button
     bit     JOY1_REGA
     bne     wait_for_user_input

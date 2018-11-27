@@ -69,7 +69,11 @@ CHAR_SWORD_U        equ #57
 CHAR_SWORD_D        equ #56
 
 CHAR_SPLAT          equ #15
+CHAR_HIT            equ #27
+CHAR_MISS           equ #28
 CHAR_GOLD           equ #14
+CHAR_KEY            equ #8
+CHAR_HEALTH         equ #21
 
 GOLD_CHANCE         equ #150     ;chance of spawning gold
 HEALTH_CHANCE       equ #70      ;chance of spawning health
@@ -167,15 +171,29 @@ TEMP21              equ $52
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
+
+MAPX                equ $57
+MAPY                equ $58
+
+LEVEL               equ $59
+BASE_HEALTH         equ $5a
+
 CURRENTSOUND        equ $60
 V1FREQ              equ $61      ;audio
 V2FREQ              equ $62
 V3FREQ              equ $63
 VNFREQ              equ $64
+
+PLAYERY             equ $65
+PLAYERX             equ $66
+
 V1DURATION          equ $67
-V2DURATION          equ $69
-V3DURATION          equ $6b
-VNDURATION          equ $6c
+V2DURATION          equ $68
+V3DURATION          equ $69
+VNDURATION          equ $6a
+
+
+
 
 CURRENTNOTE_BASS    equ $6d
 NOTEDURATION        equ $6e
@@ -241,12 +259,12 @@ PLAYERWEAPONDAMAGE      equ $03f1
 CHARUNDERPLAYER         equ $03f2 
 PLAYERGOLD_H            equ $03f3       ;BCD number
 PLAYERGOLD_L            equ $03f4       ;BCD number
-PLAYERY                 equ $03f5 
-PLAYERX                 equ $03f6 
+;PLAYERY                 equ $03f5 ;moved to zero page
+;PLAYERX                 equ $03f6 
 PLAYERDIR		        equ	$03f7
 
-MAPX                    equ $03f8
-MAPY                    equ $03f9
+;MAPX                    equ $03f8
+;MAPY                    equ $03f9
 
 PLAYERHEALTH            equ $03fa
 
@@ -277,22 +295,28 @@ init:
     lda     #8
     sta     $900f
     
-    ;0 initial values
+
+    
+    ;0 initial values in cassette buffer
     lda     #$00
     ldx     #$bf
 init_loop1:
     sta     $033c,x
     dex
-    bne     init_loop1     
+    bne     init_loop1   
     
-    sta     CURRENTNOTE
-    sta     CURRENTNOTE_BASS
-    sta     NOTEDURATION
-    sta     V1DURATION
-    sta     V2DURATION
-    sta     V3DURATION
-    sta     MUSIC_INTERVAL
-
+    ;The intro needs to be here before initializing variables otherwise
+    ;some of the zp variables could get overwritten
+    
+;enable after testing
+    ;jsr     intro ; disable for testing  
+    
+    ldx     #$19
+init_loop2
+    sta     $57,x
+    dex
+    bne     init_loop2
+    
     sta     ATTACK_ACTIVE
     
     ;pointer settings
@@ -305,7 +329,7 @@ init_loop1:
  	sta     CHAR_BASE
     
     ;initial character direction is right (1)
-    sta 	PLAYERDIR
+    ;sta 	PLAYERDIR
     
     
     
@@ -315,17 +339,23 @@ init_loop1:
     ;lda     #MAP_START_LEVEL1_Y
     sta     MAPY
     
+    lda     #8
+    sta     PLAYERWEAPONDAMAGE
+    
     ;reset delay
     lda     #10 ;set countdown timer 15 jiffys (resolution 1 jiffy)
     
     ;initial player 
-    sta     COUNTDOWN
+    ;sta     COUNTDOWN
     sta     PLAYERSPEED
+    
+    lda     #16
     sta     PLAYERHEALTH
     
-    ;values set to $20
+    ;set border character for first level
     lda     #23
     sta     CHAR_BORDER 
+    
     ;initial volume
     lda     #$0f
     sta     VOLUME
@@ -338,7 +368,7 @@ init_loop1:
 ;==================================================================
 ; 
 ;
-    ;jsr     intro ; disable for testing
+
     
     ;set custom character set
     lda     #$ff
@@ -346,12 +376,11 @@ init_loop1:
     
     jsr     drawBoard
     jsr     drawScreen
-    lda     #CHAR_PLAYER_R
+    lda     #CHAR_PLAYER_L
     jsr     spawn_char
     sty     PLAYERY
     stx     PLAYERX
     sta     CHARUNDERPLAYER
-
 
     jsr     wait_for_user_input
 
@@ -523,16 +552,19 @@ map_data: ;                                                  <<<  forest    |  d
 ;YELLOW          equ #7
 
 ;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
-; other info can be stored in here in the top bits too
+;lowest 3 bits are color info
 
-char_color  dc.b 00, 05, 07, 03, 07, 07, 03, 07 ;0-7
-            dc.b 07, 02, 01, 01, 05, 05, 07, 02 ;8-15
-            dc.b 00, 05, 05, 05, 05, 02, 02, 05 ;16-23
-            dc.b 01, 01, 06, 05, 05, 05, 01, 01 ;24-31
-            dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;32-39;
-            dc.b 02, 01, 02, 06, 03, 03, 03, 03 ;40-47
-            dc.b 01, 01, 01, 01, 01, 01, 01, 01 ;48-55
-            dc.b 01, 01, 01, 01, 07, 07, 07, 07 ;56-63
+char_color  hex 00 05 01 03 03 07 03 04 ;0-7
+            hex 07 02 01 01 05 05 07 02 ;8-15
+            hex 00 05 05 05 05 02 02 05 ;16-23
+            hex 01 01 06 04 01 05 01 01 ;24-31
+            hex 01 01 01 01 01 01 01 01 ;32-39;
+            
+            ;for enemies bits  6 and 7 (high) are for enemy difficulty calcluated as level + diffficulty so player health when hit is health-= level + 1 + difficulty
+            ;bits 3,4,5 are for health and is calculated as base + 4 * health
+            hex 02 01 02 06 33 33 33 33 ;40-47
+            hex 11 c1 c9 01 01 01 01 01 ;48-55
+            hex 01 01 01 01 07 07 07 07 ;56-63
             
 ;must go last because the address is after all of this code
     include     "charset.asm"
