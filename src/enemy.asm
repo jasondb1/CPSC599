@@ -472,7 +472,16 @@ boss_killed:
     jsr     inactivate_all_enemies
     jsr     erase_boss
     
+    lda     LEVEL
+    cmp     HIGHEST_LEVEL
+    bne     boss_killed_drop_key
+    lda     #9          ;bbq end object
+    bne     boss_killed_cont
+    
+boss_killed_drop_key:
     lda     #CHAR_KEY
+    
+boss_killed_cont:
     jsr     spawn_char
 
     ;spawn health and gold

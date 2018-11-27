@@ -98,6 +98,8 @@ MAP_START_LEVEL2_Y  equ #12
 MAP_START_LEVEL3_X  equ #19
 MAP_START_LEVEL3_Y  equ #14
 
+DEFAULT_DIFFUCULTY  equ #3
+
 
 ;==================================================================
 ;Colors
@@ -250,6 +252,7 @@ BOSS_LR_Y               equ BOSS_ACTIVE + 8
 BOSS_CHAR               equ BOSS_ACTIVE + 10
 DIRECTION_TO_PLAYER     equ BOSS_ACTIVE + 11
 
+HIGHEST_LEVEL           equ $03ec
 MUSIC_INTERVAL          equ $03ed
 PLAYER_SPRITE_CURRENT   equ $03ee
 SWORD_SPRITE_CURRENT    equ $03ef
@@ -331,8 +334,6 @@ init_loop2
     ;initial character direction is right (1)
     ;sta 	PLAYERDIR
     
-    
-    
     ;map and graphic pointers
     ;lda     #MAP_START_LEVEL1_X
     sta     MAPX
@@ -355,6 +356,9 @@ init_loop2
     ;set border character for first level
     lda     #23
     sta     CHAR_BORDER 
+    
+    lda     #DEFAULT_DIFFUCULTY
+    sta     HIGHEST_LEVEL
     
     ;initial volume
     lda     #$0f
