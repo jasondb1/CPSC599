@@ -31,8 +31,12 @@ spawn_enemy_update:
     pla
     sta     enemy_charunder,x
     
-    ;TODO; base health/strength and speed on some number
-    lda     #10
+    ;TODO; base health/strength and speed on some number 
+    lda     enemy_type,x
+    and     #38             ;isolate bits 4,5,6
+    lsr                     ; the result is health * 4
+    clc
+    adc     BASE_HEALTH
     sta     enemy_health,x
     lda     #40
     sta     enemy_speed,x
@@ -70,8 +74,6 @@ spawn_boss:
     ora     #$80
     sta     BOSS_CHAR    
     
-     
-        
 spawn_boss_loop:
 
     lda     BOSS_CHAR
@@ -122,14 +124,16 @@ move_enemy_done:
     
 move_enemy_begin:    
     stx     TEMP_ENEMYNUM
-    lda     enemy_speed,x        ;reset movement points
-    sta     enemy_move_clock,x
+    ;lda     enemy_speed,x        ;reset movement points
+    ;sta     enemy_move_clock,x
     
     ;TODO: determine if enemy attacks in collisions if close combat, or other if projectile)
     
     ;replace background tile under char
-    lda     enemy_charunder,x
-    jsr     enemy_draw_tile
+    ;lda     enemy_charunder,x
+    ;jsr     enemy_draw_tile
+    
+    jsr     enemy_begin_move
     
     ;compute next move
     jsr     dir_to_player
@@ -147,6 +151,13 @@ move_enemy_cont:
     cmp     #WALKABLE
     bcc     move_enemy_cont1
     
+        ;if player then attack
+    cmp     #60
+    bcc     move_enemy_cont2
+    
+    ;do attack code
+    
+move_enemy_cont2
     ldx     TEMP_ENEMYNUM
     lda     TEMP3        ;restore last coordinates of enemy
     sta     enemy_x,x
@@ -195,16 +206,9 @@ move_boss_begin:
     stx     TEMP_ENEMYNUM
     
 move_boss_loop0:    
-    ;clears the area underneath the enemies
+    ;clears the area underneath the boss
     ldx     TEMP_ENEMYNUM
-    
-    lda     enemy_speed,x        ;reset movement points
-    sta     enemy_move_clock,x
-    
-    ;replace background tile under char
-    lda     enemy_charunder,x
-    jsr     enemy_draw_tile
-    
+    jsr     enemy_begin_move
     dec     TEMP_ENEMYNUM
     bpl     move_boss_loop0
     
@@ -225,6 +229,10 @@ move_boss_cont2:
     
 move_boss_cont:
     ldx     #0
+    
+    ;TODO check collision that returns a status code - 0 no collision 1, collision with player,
+    ;collision with border or element
+    
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
     ldy     enemy_y,x
@@ -234,16 +242,21 @@ move_boss_cont:
     cmp     #WALKABLE
     bcc     move_boss_cont1
     
+    ;if player then attack
+    cmp     #60
+    bcc     move_boss_cont3
+    ;do attack code
     
-    ;maybe if left unavailable move right up/dn etc instead of restore last
+    
+move_boss_cont3:
+    ;TODO: restore previous position properly by moving boss back from where he came from 
     ldx     TEMP_ENEMYNUM
     lda     TEMP3        ;restore last coordinates of enemy
     sta     enemy_x,x
     lda     TEMP2
     sta     enemy_y,x
-    ;TODO: other collision stuff here
     
-    ;bcs     move_boss_cont1
+
 move_boss_cont1:
     ldx     #3
     stx     TEMP_ENEMYNUM
@@ -323,7 +336,7 @@ enemy_at_end:
 inactivate_all_enemies:
 
     lda     #00                     ;character type of enemy
-    sta     BOSS_ACTIVE  
+    sta     BOSS_ACTIVE             ;reset boss to not active
     ldx     #NUM_ENEMIES
 
 inactivate_all_enemies_loop:
@@ -416,4 +429,78 @@ execute_move_up:
     dec     enemy_y,x
 
 execute_move_end:
+    rts
+
+
+;==================================================================
+; enemy_begin_move
+;
+; x - enemy to move
+;
+enemy_begin_move:
+    lda     enemy_speed,x        ;reset movement points
+    sta     enemy_move_clock,x
+    
+    ;replace background tile under char
+    lda     enemy_charunder,x
+    jsr     enemy_draw_tile
+    
+    rts
+    
+;==================================================================
+; erase_enemies - erases all enemies on screen
+;                 and replace with splat
+;
+erase_boss:
+    ldx     #3
+    stx     TEMP_ENEMYNUM
+
+erase_boss_loop:
+    ldx     TEMP_ENEMYNUM
+    lda     #CHAR_SPLAT
+    jsr     enemy_draw_tile
+    dec     TEMP_ENEMYNUM    
+    bpl     erase_boss_loop
+
+    rts
+    
+;==================================================================
+; boss_killed - kills the boss
+; 
+;
+boss_killed:
+    jsr     inactivate_all_enemies
+    jsr     erase_boss
+    
+    lda     #CHAR_KEY
+    jsr     spawn_char
+
+    ;spawn health and gold
+    lda     #5
+    sta     TEMP1
+boss_killed_loop1:
+    lda     #CHAR_HEALTH
+    jsr     spawn_char
+    lda     #CHAR_GOLD
+    jsr     spawn_char
+    dec     TEMP1
+    bpl     boss_killed_loop1
+    
+    rts
+
+
+;==================================================================
+; boss_health_decrease
+;
+; x - boss
+;
+boss_health_decrease:
+    lda     enemy_health,x
+    
+    ldx     #3
+boss_health_decrease_loop:
+    sta     enemy_health,x
+    dex     
+    bpl     boss_health_decrease_loop
+
     rts

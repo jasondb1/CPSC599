@@ -3,36 +3,35 @@
 
 update_status:
 
-    ;TODO routine to print numbers such as gold
-    ;TODO display weapon???
-    ;jsr     drawScreen
     ;key icon 
     lda     PLAYERHASKEY
     beq     update_status_cont1
     lda     #YELLOW
-    sta     COLORMAPSTATUS + 31
     bne     update_status_health
     
 update_status_cont1:
     lda     #BLACK
+
+
+update_status_health:     
     sta     COLORMAPSTATUS + 31
-
-update_status_health:    
-    lsr        PLAYERHEALTH ;divide player health by 2 to conserve on space
-    tay
+    ldy     #0
 update_status_health_loop:
-    ;TODO: update color spectrum
-    ;cpy     #3
-    ;lda     #RED
+    tya     ;each section of health bar = 2 health
+    asl 
+    cmp     PLAYERHEALTH
+    bcc     update_status_health_red
+    lda     #BLACK
+    bcs     update_status_health_cont
     
-    lda         #CHAR_SOLID
-    sta         SCREENSTATUS+36,y
-    lda         #RED
-    sta         COLORMAPSTATUS+36,y
-
-    dey     
+update_status_health_red:
+    lda     #RED
+    
+update_status_health_cont:
+    sta     COLORMAPSTATUS+35,y
+    iny
+    cpy     #8   
     bne     update_status_health_loop
-
 
     ;display money
     lda     #YELLOW
@@ -50,14 +49,14 @@ update_status_health_loop:
     
     ;map position (for debugging) does not >9 correctly
     ;map x 
-    clc
-    lda     #30
-    adc     MAPY
-    sta     SCREENSTATUS+16
+    ;clc
+    ;lda     #30
+    ;adc     MAPY
+    ;sta     SCREENSTATUS+16
     
-    lda     #30
-    adc     MAPX
-    sta     SCREENSTATUS+18
+    ;lda     #30
+    ;adc     MAPX
+    ;sta     SCREENSTATUS+18
     
     rts
     
@@ -102,8 +101,10 @@ drawScreen:
 ;clear bottom 2 lines
     ldx     #44
 drawScreen_loop
-    lda     #CHAR_BLANK
+    lda     #CHAR_SOLID
     sta     SCREENSTATUS,x
+    lda     #BLACK
+    sta     COLORMAPSTATUS,x
     dex
     bne     drawScreen_loop
         
@@ -117,14 +118,6 @@ drawScreen_loop
     ;health indicator icon
     lda     #21
     sta     SCREENSTATUS+34
-    
-    ;health bar icon
-	;lda		#CHAR_SOLID
-	;sta		SCREENSTATUS+36
-	;sta		SCREENSTATUS+37
-	;sta		SCREENSTATUS+38
-	;sta		SCREENSTATUS+39
-    ;sta		SCREENSTATUS+40
     
     ;color gold and health icons
     lda     #14
@@ -195,13 +188,8 @@ drawBoard_cont1:
     sta     RANDSEED
 
     ;load screen and color pointers starts at lower right value of the screen and draws upward
-    lda     #$1f
-    sta     CHARPOS_H
-    lda     #$97
-    sta     COLORMAP_H
-    ldy     #$00
-    sty     CHARPOS_L
-    sty     COLORMAP_L
+    inc     CHARPOS_H
+    inc     COLORMAP_H
      
     lda     #SCREENBOTTOM
     sta     TEMP21                 ;keeps track of row (for bottom and top borders)
@@ -211,7 +199,7 @@ drawBoard_cont1:
     ldx     #$02            
     stx     TEMP1                  ;outer loop iterations
     ldy     #$cd 
-    jmp     drawBoard_inner
+    bne     drawBoard_inner
 
 drawBoard_outer:
     ldy     #$ff
@@ -279,11 +267,13 @@ drawBoard_test_border_right:
 drawBoard_test_random_elements:
     ;test for and draw random landscape element
     jsr     prand
-    cmp     #5                      ;5/255 chance of being a landscape element
+    cmp     #6                      ;5/255 chance of being a landscape element
     bcs     drawBoard_base_char
     jsr     prand                   ;randomize which element is drawn
-    and     #06                     ; only allow characters 2-7 to be drawn
-    jmp     drawBoard_to_screen
+    jsr     prand
+    and     #$07
+    beq     drawBoard_base_char                  
+    bne     drawBoard_to_screen
 
 drawBoard_base_char:
     lda     CHAR_BASE
@@ -347,8 +337,8 @@ draw_other:
     cmp     #$08        ;draw Castle
     bne     draw_other_dungeon_door
     
-    ldx     #6          ;column
-    ldy     #6          ;row
+    ldx     #$0a          ;column
+    ldy     #$0a          ;row
     lda     #10
     jsr     put_char
     jsr     draw_tower
@@ -358,8 +348,8 @@ draw_other_dungeon_door:
     cmp     #$09        ;draw dungeon entrance
     bne     draw_other_key
     
-    ldx     #6          ;column
-    ldy     #6          ;row
+    ldx     #$0a          ;column
+    ldy     #$0a          ;row
     lda     #11         ;dungeon door
     jsr     put_char
     jsr     draw_tower
@@ -375,10 +365,8 @@ draw_other_bbq:
     lda     TEMP10      ;map data
     cmp     #$05        ;draw dungeon entrance
     bne     draw_other_gold
-    ldx     #5          ;column
-    ldy     #6          ;row
     lda     #9
-    jsr     put_char
+    jsr     spawn_char
     
 draw_other_gold:
     jsr     prand
@@ -400,17 +388,52 @@ draw_other_end:
     
     
 draw_tower:
-    ldx     #5          ;column
-    ldy     #6          ;row
+    ldx     #$0b          ;column
+    ldy     #$0a          ;row
     lda     #25
+    pha
     jsr     put_char
     
-    ldx     #7          ;column
-    ldy     #6          ;row
-    lda     #25
+    ldx     #$09          ;column
+    ldy     #$0a          ;row
+    pla
     jsr     put_char
     
     rts
+    
+;==================================================================
+; spawn_close - puts character onto screen in random location
+; this routine is used to drop items from a defeated enemy
+;
+; a- the character (0-63) to place on screen 
+;
+; return
+; x-  returns col
+; y - returns row
+;spawn_close:
+;    pha
+;    
+;spawn_close_relocate:
+;    jsr     prand 
+;    and     #$03    ;change if required
+;    adc     ATTACK_Y
+;    sbc     #$1
+;    beq     spawn_close_relocate    ; if 0
+;    cmp     SCREENBOTTOM+1
+;    bpl     spawn_close_relocate ;if off the bottom of screen
+;    tay
+;    sty     SPAWN_Y
+;    
+;    jsr     prand
+;    and     #$03
+;    adc     ATTACK_X
+;    sbc     #$1
+;    tax
+;    stx     SPAWN_X
+;    jsr     get_char        ;check if char under is < 8
+;    cmp     #$08
+;    bcs     spawn_close_relocate
+;    bcc     spawn_char_at    
     
 ;==================================================================
 ; spawn_char - puts character onto screen in random location
@@ -438,7 +461,15 @@ spawn_char_relocate:
     jsr     get_char        ;check if char under is < 8
     cmp     #$08
     bcs     spawn_char_relocate
-    
+
+;==================================================================
+; cont'd from spawn_char 
+; spawn_char_at - puts character at location y,x
+; TOS (top of stack) the character to display
+; y - row to place character
+; x - col to place character
+
+spawn_char_at:
     ldy     SPAWN_Y
     ldx     SPAWN_X
     pla
@@ -484,6 +515,7 @@ put_char_cont:
     tax
     sta     (CHARPOS_L),y    ; print next character to position
     lda     char_color,x
+    and     #$07             ; clear all but last 3 bits
     sta     (COLORMAP_L),y 
     
     ;restore CHARPOS_H and COLORMAP_H

@@ -7,8 +7,8 @@ char_set:
 	hex 00 10 00 40 04 00 02 00 ;1 - base landscape
 	
 	; 2 through 7 can be randomly generated
-	hex	3e 6b 7f 6f 36 0c 14 3a ;2 - tree? maybe not necessary with tree border
-	hex	00 00 42 18 18 38 6c b4 ;3 - rock
+	hex	00 00 42 18 18 38 6c b4 ;2 - rock
+	hex	3e 6b 7f 6f 36 0c 14 3a ;3 - tree? maybe not necessary with tree border
 	hex	00 00 00 00 00 00 54 38 ;4 - grass
 	hex 02 52 d6 74 3c 1a 18 18 ;5 - stump
 	hex 00 7e 7e 7e 7e 18 18 18 ;6 - sign
@@ -24,14 +24,15 @@ char_set:
 	hex 00 18 3c 7e 7e 7e 7e 7e ;11 - dungeon door
 	hex aa 55 aa 55 aa 55 aa 55 ;12 - bridge / tile
 	hex aa 55 aa 55 aa 55 aa 55 ;13 - wall
-	hex 00 3c 7e 7e 7e 7e 3c 00 ;14 - coin
+	hex 00 3c 7e 7a 7a 66 3c 00 ;14 - coin
 	hex 09 a2 2c 7c 5e 76 3c 84 ;15 - splat
 	hex aa 55 aa 55 aa 55 aa 55 ;16 - path?
 	hex aa 55 aa 55 aa 55 aa 55 ;17 - 
 	hex aa 55 aa 55 aa 55 aa 55 ;18
 	hex aa 55 aa 55 aa 55 aa 55 ;19
 	hex aa 55 aa 55 aa 55 aa 55 ;20
-	hex 00 18 18 7e 7e 18 18 00 ;21 - +
+	;hex 00 18 18 7e 7e 18 18 00 ;21 - + (health)
+	hex ff e7 e7 81 81 e7 e7 ff ;21 - + (health)
 	hex 44 44 44 7c 44 44 c7 44 ;22 - base - brick
 	
 ;;;;;;not walkable vvv
@@ -40,8 +41,8 @@ char_set:
 	;hex 3c d7 ab d5 ab d5 ab ff ;25 - castle tower
 	hex c3 ff dd ab d5 ab d5 ff ;25 - alternate tower	
 	hex aa 55 aa 55 aa 55 aa 55 ;26 - water?
-	hex	00 00 00 ff ff 00 00 00 ;27 - horiz line?
-	hex	18 18 18 18 18 18 18 18 ;28 - vert line?
+	hex	00 54 38 6c 38 54 00 00 ;27 - hit
+	hex	00 54 38 6c 38 54 00 00 ;28 - miss
 	hex aa 55 aa 55 aa 55 aa 55 ;29 - checkerboard
 
 	hex 3c 42 46 5a 62 42 3c 00 ;30 - 0

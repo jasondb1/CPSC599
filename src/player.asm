@@ -69,8 +69,7 @@ move_player_down:
     ldx     #CHAR_PLAYER_D
     stx     PLAYER_SPRITE_CURRENT
     inc     PLAYERY
-    
-    ;enable when implemented
+
     ldy 	#DOWN
     sty 	PLAYERDIR
     
@@ -92,7 +91,6 @@ move_player_up:
     stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERY
     
-    ;enable when implemented
     ldy 	#UP
     sty 	PLAYERDIR
     
@@ -155,7 +153,7 @@ check_items_check_item1:
     cmp     #10
     bne     check_items_item2
     
-    ;TODO: check if player has key
+    ;check if player has key
     lda     PLAYERHASKEY
     beq     check_items_end
     dec     PLAYERHASKEY
@@ -166,7 +164,7 @@ check_items_check_item1:
     sta     MAPX
     lda     #MAP_START_LEVEL2_Y
     sta     MAPY
-    
+    inc     LEVEL
     ; need to swap base tiles
     
     ;lda     #CHAR_BASE_CASTLE
@@ -177,16 +175,18 @@ check_items_check_item1:
     sta     char_color+1
     
     jsr     drawBoard           ;redraw the board
-    jmp     check_items_end
+    rts
     
 check_items_item2:
     ;is it the dungeon door?
     cmp     #11
     bne     check_items_item3
     
-    ;TODO: check if player has key
+    ;check if player has key
     lda     PLAYERHASKEY
     beq     check_items_end
+    
+    ;enter new level
     dec     PLAYERHASKEY
     lda     #4
     sta     PLAYERX
@@ -199,9 +199,10 @@ check_items_item2:
     sta     MAPX
     lda     #MAP_START_LEVEL3_Y
     sta     MAPY
+    inc     LEVEL
 
     jsr     drawBoard           ;redraw the board
-    jmp     check_items_end
+    rts
     
 check_items_item3:
     ;is it the key?
@@ -223,7 +224,6 @@ check_items_item5:
     bne     check_items_item6
     jsr     add_gold_rand
     jsr     replace_base_char
-    ;TODO: pickup gold and increase score
     
 check_items_item6:
     ;found bbq
@@ -253,8 +253,10 @@ player_attack:
 
     lda     ATTACK_ACTIVE
     bne     player_attack_skip
-    ;get direction (LRDU)
     lda     PLAYERDIR
+    ldx     PLAYERX
+    ldy     PLAYERY
+    
     asl
     bcs     player_attack_left
     asl
@@ -267,37 +269,31 @@ player_attack:
 player_attack_skip:
     rts
 
+;TODO: test if attacking offscreen
 player_attack_right:
-    ldx     PLAYERX
     inx
-    ldy     PLAYERY
     bne     player_attack_cont
 
 player_attack_left:
-    ldx     PLAYERX
     dex
-    ldy     PLAYERY
+
     bne     player_attack_cont
     
 player_attack_down:
-    ldy     PLAYERY
     iny
-    ldx     PLAYERX
     bne     player_attack_cont
 
 player_attack_up:
-    ldy     PLAYERY
     dey
-    ldx     PLAYERX
-    bne     player_attack_cont
+
 
 player_attack_cont:
     stx     ATTACK_X
     sty     ATTACK_Y
     jsr     get_char        ;values must be between 44 and 55, could expand if required
     sta     ATTACK_CHARUNDER
-    cmp     #56
-    bcs     player_attack_miss
+    ;cmp     #56
+    ;bcs     player_attack_miss
     cmp     #44
     bcs     player_attack_hit
     
@@ -310,37 +306,54 @@ player_attack_miss:
     lda     #$04
     sta     V3DURATION
 
-    ;lda     #CHAR_SWORD_R
     lda     SWORD_SPRITE_CURRENT
     bcc     player_attack_cont1
     
 player_attack_hit:
-    tay                 ;store character underneath in 
     lda     #$e0        ;hit noise
     sta     NOISE
     lda     #$08
     sta     VNDURATION
-    
-    ;TODO: decide on damage and if enemy is killed or not
+        
     ldx     ATTACK_X
     ldy     ATTACK_Y
     jsr     enemy_at
     
+    ;subtract damage from enemy
+    lda     enemy_health,x
+    sbc     PLAYERWEAPONDAMAGE
+    sta     enemy_health,x
+    bmi     player_attack_enemy_killed
+    
+    lda     BOSS_ACTIVE
+    beq     player_attack_cont2
+    jsr     boss_health_decrease
+    
+player_attack_cont2
+    jsr     activate_attack
+    lda     #CHAR_HIT
+    bne     player_attack_cont1
+    
 player_attack_enemy_killed:
-    ;TODO: drop stuff? reduce health instead of just killing,  something else?
+    lda     BOSS_ACTIVE
+    beq     player_attack_cont4
+    jmp    boss_killed
+
+player_attack_cont4:
     lda     #$00            ;deactivate enemy
     sta     enemy_type,x
-    
+
+    ;this counts the stats of number of enemies killed (delete if not used)
     inc     ENEMY_KILLED_L
     bne     player_attack_cont3
     inc     ENEMY_KILLED_H
-    bne     player_attack_cont3
-    
-player_attack_cont2:
-    ;enemy not killed
-    jsr     activate_attack
 
 player_attack_cont3:
+    ;drop stuff
+    lda     #CHAR_GOLD
+    jsr     spawn_char
+    
+    ;put splat on screen
     lda     #CHAR_SPLAT
     
 player_attack_cont1:
@@ -352,7 +365,7 @@ player_attack_end:
     rts
     
 
-s;==================================================================
+;==================================================================
 ; activate_attack
 ;
 ;   common code for attack activation

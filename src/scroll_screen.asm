@@ -40,7 +40,6 @@ intro_loop:
     ;jsr     playBass
     jsr     playSound
     jsr     timer
-    ;lda     #$0
     lda     COUNTDOWN
     bne     intro_loop
     
@@ -57,13 +56,8 @@ intro_loop:
 ;finished scroll
 
 intro_wait:
-    jsr     timer
-    jsr     playNote   ;if music is wanted for intro
-    ;jsr     playBass 
-    lda     #$20       ;test fire button
-    bit     JOY1_REGA
-    bne     intro_wait
-    
+    jsr wait_for_user_input
+        
 intro_end:
     rts
 
