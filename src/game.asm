@@ -77,6 +77,7 @@ CHAR_HEALTH         equ #21
 
 GOLD_CHANCE         equ #150     ;chance of spawning gold
 HEALTH_CHANCE       equ #70      ;chance of spawning health
+CHANCE_TO_HIT       equ #204     ;= 255 * 0.8 modify as needed
 
 ;enemy related
 NUM_ENEMIES         equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
@@ -141,9 +142,11 @@ CHARSET             equ $1c00
 CHARSETSELECT       equ $9005
 
 ;BASIC RAND SEED $8B-$8F
-RANDSEED            equ $8b
-ATTACKDURATION      equ $8e
-ATTACK_ACTIVE       equ $8f
+RANDSEED                equ $8b
+ENEMY_ATTACKDURATION    equ $8c
+PLAYERHEALTH            equ $8d
+ATTACKDURATION          equ $8e
+ATTACK_ACTIVE           equ $8f
 
 ;===================================================================
 ; User Defined Memory locations
@@ -169,7 +172,7 @@ TEMP2               equ $4f
 TEMP3               equ $50
 TEMP20              equ $51
 TEMP21              equ $52
-
+TEMP_ENEMYNUM       equ $53
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
@@ -179,6 +182,11 @@ MAPY                equ $58
 
 LEVEL               equ $59
 BASE_HEALTH         equ $5a
+ENEMY_ATTACK_ACTIVE equ $5b
+ATTACK_X            equ $5c
+ATTACK_Y            equ $5d
+ENEMY_ATTACK_X      equ $5e
+ENEMY_ATTACK_Y      equ $5f
 
 CURRENTSOUND        equ $60
 V1FREQ              equ $61      ;audio
@@ -194,8 +202,8 @@ V2DURATION          equ $68
 V3DURATION          equ $69
 VNDURATION          equ $6a
 
-
-
+;free               equ $6b
+;free               equ $6c
 
 CURRENTNOTE_BASS    equ $6d
 NOTEDURATION        equ $6e
@@ -218,10 +226,11 @@ COUNTDOWN           equ $FE
 ;0200-0258        512-600        BASIC input buffer--where the charac-
 ;                                   ters being INPUT will go.
 BASIC_BUFFER_AREA   equ $0200
-
+;not currently used
 
 ;033c-03fb - casette buffer area
 ;191 bytes
+;arrays can vary depending on number of enemies
 enemy_type              equ $033c
 enemy_speed             equ $033c + ((NUM_ENEMIES + 1) * 1)       
 enemy_move_clock        equ $033c + ((NUM_ENEMIES + 1) * 2)
@@ -229,18 +238,25 @@ enemy_health            equ $033c + ((NUM_ENEMIES + 1) * 3)
 enemy_x                 equ $033c + ((NUM_ENEMIES + 1) * 4)  
 enemy_y                 equ $033c + ((NUM_ENEMIES + 1) * 5)  
 enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)  
+
+;attack animation
 ATTACK_CHARUNDER        equ $033c + ((NUM_ENEMIES + 1) * 7)      
-ATTACK_X                equ ATTACK_CHARUNDER + 1
-ATTACK_Y                equ ATTACK_X + 1  
-ENEMY_KILLED_L          equ ATTACK_Y + 1
-ENEMY_KILLED_H          equ ATTACK_Y + 2 
+;ATTACK_X                equ ATTACK_CHARUNDER + 1
+;ATTACK_Y                equ ATTACK_X + 1  
+
+;used to keep track of number of enemies killed
+ENEMY_KILLED_L          equ ATTACK_CHARUNDER + 1
+ENEMY_KILLED_H          equ ENEMY_KILLED_L + 1
+
 SPAWN_X                 equ ENEMY_KILLED_H + 1
 SPAWN_Y                 equ ENEMY_KILLED_H + 2
 TEMPVAR			        equ ENEMY_KILLED_H + 3
-TEMP_ENEMYNUM           equ ENEMY_KILLED_H + 4
-CHAR_BORDER             equ ENEMY_KILLED_H + 5
-CHAR_BASE               equ ENEMY_KILLED_H + 6
-BOSS_ACTIVE             equ ENEMY_KILLED_H + 7
+;TEMP_ENEMYNUM           equ ENEMY_KILLED_H + 4
+CHAR_BORDER             equ ENEMY_KILLED_H + 4
+CHAR_BASE               equ ENEMY_KILLED_H + 5
+
+;used for boss spawning
+BOSS_ACTIVE             equ ENEMY_KILLED_H + 6
 BOSS_UL_X               equ BOSS_ACTIVE + 1
 BOSS_UR_X               equ BOSS_ACTIVE + 2
 BOSS_LL_X               equ BOSS_ACTIVE + 3
@@ -252,11 +268,11 @@ BOSS_LR_Y               equ BOSS_ACTIVE + 8
 BOSS_CHAR               equ BOSS_ACTIVE + 10
 DIRECTION_TO_PLAYER     equ BOSS_ACTIVE + 11
 
+;Less used player variables
 HIGHEST_LEVEL           equ $03ec
 MUSIC_INTERVAL          equ $03ed
 PLAYER_SPRITE_CURRENT   equ $03ee
 SWORD_SPRITE_CURRENT    equ $03ef
-
 PLAYERHASKEY            equ $03f0  
 PLAYERWEAPONDAMAGE      equ $03f1
 CHARUNDERPLAYER         equ $03f2 
@@ -266,10 +282,10 @@ PLAYERGOLD_L            equ $03f4       ;BCD number
 ;PLAYERX                 equ $03f6 
 PLAYERDIR		        equ	$03f7
 
-;MAPX                    equ $03f8
+;MAPX                    equ $03f8  ;moved to zero page
 ;MAPY                    equ $03f9
 
-PLAYERHEALTH            equ $03fa
+;PLAYERHEALTH            equ $03fa
 
 GAMEOVER                equ $03fb
 
@@ -335,19 +351,16 @@ init_loop2
     ;sta 	PLAYERDIR
     
     ;map and graphic pointers
-    ;lda     #MAP_START_LEVEL1_X
     sta     MAPX
-    ;lda     #MAP_START_LEVEL1_Y
     sta     MAPY
     
     lda     #8
     sta     PLAYERWEAPONDAMAGE
     
     ;reset delay
-    lda     #10 ;set countdown timer 15 jiffys (resolution 1 jiffy)
+    lda     #10
     
     ;initial player 
-    ;sta     COUNTDOWN
     sta     PLAYERSPEED
     
     lda     #16
@@ -373,7 +386,6 @@ init_loop2
 ; 
 ;
 
-    
     ;set custom character set
     lda     #$ff
     sta     CHARSETSELECT
@@ -523,7 +535,7 @@ ending_text:
 ; forest: 1,1 thru 13,8
 ; castle: 1,9 thru 13,16
 
-;TODO:This could be procedurally generated if space permits
+;TODO:This could be procedurally generated if space/time permits
 map_data: ;                                                  <<<  forest    |  dungeon >>
 ;             1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20   21   22
     dc.b    $D4, $90, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $50, $90, $10, $10, $10, $10, $10, $15, $10, $50
@@ -541,7 +553,7 @@ map_data: ;                                                  <<<  forest    |  d
     dc.b    $80, $00, $00, $00, $04, $09, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
-    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
+;temp while space is found    dc.b    $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $40, $80, $00, $00, $00, $00, $00, $00, $00, $40
     dc.b    $a0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $60, $a0, $20, $20, $20, $20, $20, $20, $20, $60
 
 ;==================================================================

@@ -20,10 +20,13 @@ timer:
     beq     timer_end
     inc     PREVJIFFY    
     dec     ATTACKDURATION  
+    dec     ENEMY_ATTACKDURATION  
     dec     V1DURATION    ; decrement duration of note each jiffy
     dec     V2DURATION    ; decrement duration of note each jiffy ;
     dec     V3DURATION    ; decrement duration of note each jiffy
     dec     VNDURATION    ; decrement duration of note each jiffy
+    
+    ;decrement each enemy move clock
     ldx     #NUM_ENEMIES  ; number of enemies
 timer_enemies:    
     dec     enemy_move_clock,x
@@ -32,7 +35,7 @@ timer_enemies:
 
 resetTimer:
     dec     COUNTDOWN
-    lda     COUNTDOWN
+    lda     COUNTDOWN           ;this instruction can likely be omitted
 
 timer_end:
     rts  

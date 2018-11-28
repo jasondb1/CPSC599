@@ -127,8 +127,6 @@ move_enemy_begin:
     ;lda     enemy_speed,x        ;reset movement points
     ;sta     enemy_move_clock,x
     
-    ;TODO: determine if enemy attacks in collisions if close combat, or other if projectile)
-    
     ;replace background tile under char
     ;lda     enemy_charunder,x
     ;jsr     enemy_draw_tile
@@ -145,31 +143,88 @@ move_enemy_cont:
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
     ldy     enemy_y,x
+    sty     ENEMY_ATTACK_Y
     lda     enemy_x,x
+    sta     ENEMY_ATTACK_X
     tax
     jsr     get_char
     cmp     #WALKABLE
     bcc     move_enemy_cont1
-    
-        ;if player then attack
-    cmp     #60
-    bcc     move_enemy_cont2
-    
-    ;do attack code
-    
-move_enemy_cont2
+    pha
+        
+move_enemy_cont2:
     ldx     TEMP_ENEMYNUM
-    lda     TEMP3        ;restore last coordinates of enemy
+    lda     TEMP3                    ;restore last coordinates of enemy
     sta     enemy_x,x
     lda     TEMP2
     sta     enemy_y,x
-    ;TODO: other collision stuff here
     
-    ;bcs     move_enemy_cont1
+    ;check if enemy attacks player
+    pla
+    cmp     #60
+    bcc     move_enemy_cont1
+    
+enemy_attack:
+    ;check if enemy hits player
+    ;jsr     enemy_activate_attack ; removed to save a few instructions
+    
+    ;activate enemy attack if an attack is not already active
+    lda     ENEMY_ATTACK_ACTIVE
+    bne     enemy_attack_end
+    inc     ENEMY_ATTACK_ACTIVE
+    lda     #10                     ;could move this to a constant
+    sta     ENEMY_ATTACKDURATION
+    jsr     prand
+    cmp     #CHANCE_TO_HIT
+    bcc     enemy_attack_hit
+    
+    
+enemy_attack_miss:
+    ;code for miss   
+    ;lda     #$f0        ;miss noise
+    ;sta     VOICE3
+    ;lda     #$04
+    ;sta     V3DURATION
+    
+    lda     #CHAR_MISS
+    bne     enemy_attack_cont
+    
+enemy_attack_hit:
+    
+    ;calculate the amount of damage and update player health
+    lda     enemy_type,x
+    and     #$c0        ;clear all other bits
+    rol
+    rol                 ;bit 7 is now in bit 1, bit 6 is in 0
+    rol
+    adc     LEVEL
+    sta     TEMP10
+    sec
+    lda     PLAYERHEALTH
+    sbc     TEMP10
+    sta     PLAYERHEALTH
+    bpl     enemy_attack_cont1
+    inc     GAMEOVER
+    ;hit noise
+    
+enemy_attack_cont1:
+    lda     #CHAR_HIT
+
+enemy_attack_cont:    
+
+    ;put the attack miss or hit at the location of the character
+    ldx     ENEMY_ATTACK_X
+    ldy     ENEMY_ATTACK_Y
+    jsr     put_char
+    jsr     update_status
+
+enemy_attack_end:
+    rts
 
 move_enemy_cont1:
-    ldx     TEMP_ENEMYNUM
+
     ;draw enemy in new position
+    ldx     TEMP_ENEMYNUM
     lda     enemy_type,x
     jsr     enemy_draw_tile
 
@@ -256,7 +311,6 @@ move_boss_cont3:
     lda     TEMP2
     sta     enemy_y,x
     
-
 move_boss_cont1:
     ldx     #3
     stx     TEMP_ENEMYNUM
@@ -446,6 +500,20 @@ enemy_begin_move:
     jsr     enemy_draw_tile
     
     rts
+   
+   
+;==================================================================
+; activate_attack
+;
+;   common code for attack activation
+;
+
+;enemy_activate_attack:
+    ;inc     ENEMY_ATTACK_ACTIVE
+    ;lda     #2                  ;could move this to a constant
+    ;sta     ENEMY_ATTACKDURATION
+    ;rts
+    
     
 ;==================================================================
 ; erase_enemies - erases all enemies on screen

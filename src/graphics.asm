@@ -270,7 +270,7 @@ drawBoard_test_random_elements:
     cmp     #6                      ;5/255 chance of being a landscape element
     bcs     drawBoard_base_char
     jsr     prand                   ;randomize which element is drawn
-    jsr     prand
+    ;jsr     prand
     and     #$07
     beq     drawBoard_base_char                  
     bne     drawBoard_to_screen
@@ -354,14 +354,14 @@ draw_other_dungeon_door:
     jsr     put_char
     jsr     draw_tower
 
-draw_other_key:
+draw_other_key: ;can omit this after testing, key is only spawned with boss
     lda     TEMP10      ;map data
     cmp     #$04        ;draw key
     bne     draw_other_bbq
     lda     #8
     jsr     spawn_char
     
-draw_other_bbq:
+draw_other_bbq:;can omit this after testing, bbq is only spawned with boss
     lda     TEMP10      ;map data
     cmp     #$05        ;draw dungeon entrance
     bne     draw_other_gold
@@ -563,15 +563,32 @@ get_char_end:
 animateAttack:
 
     lda     ATTACKDURATION
-    bne     animateAttack_end
+    bne     animateAttack_enemy
     lda     ATTACK_ACTIVE
-    beq     animateAttack_end
+    beq     animateAttack_enemy
+    
+    ;replace the character underneath the players attack
     lda     ATTACK_CHARUNDER
     ldx     ATTACK_X
     ldy     ATTACK_Y
     jsr     put_char
     dec     ATTACK_ACTIVE
     
+animateAttack_enemy:
+    lda     ENEMY_ATTACKDURATION
+    bne     animateAttack_end
+    lda     ENEMY_ATTACK_ACTIVE
+    beq     animateAttack_end
+   
+    ;replace characters player sprite from hit/miss sprite
+    lda     PLAYER_SPRITE_CURRENT
+    ldx     PLAYERX
+    ldy     PLAYERY
+    jsr     put_char
+    
+    dec     ENEMY_ATTACK_ACTIVE    
+
+
 animateAttack_end:
     rts
 

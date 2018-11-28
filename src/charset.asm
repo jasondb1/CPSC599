@@ -32,7 +32,7 @@ char_set:
 	hex aa 55 aa 55 aa 55 aa 55 ;19
 	hex aa 55 aa 55 aa 55 aa 55 ;20
 	;hex 00 18 18 7e 7e 18 18 00 ;21 - + (health)
-	hex ff e7 e7 81 81 e7 e7 ff ;21 - + (health)
+	hex ff e7 e7 81 81 e7 e7 ff ;21 - + (health reversed)
 	hex 44 44 44 7c 44 44 c7 44 ;22 - base - brick
 	
 ;;;;;;not walkable vvv

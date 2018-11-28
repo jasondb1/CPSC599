@@ -103,6 +103,13 @@ move_player_up:
     sty     PLAYERY
 
 move_player_draw_board:
+    ;store the player and sword sprites from movement
+    ;stx     SWORD_SPRITE_CURRENT
+    ;clc
+    ;txa     
+    ;adc     #4          ;distance apart between the sword and character sprite
+    ;sta     PLAYER_SPRITE_CURRENT
+
     jsr     drawBoard
     
 move_player_cont:
@@ -276,7 +283,6 @@ player_attack_right:
 
 player_attack_left:
     dex
-
     bne     player_attack_cont
     
 player_attack_down:
@@ -306,7 +312,7 @@ player_attack_miss:
     lda     #$04
     sta     V3DURATION
 
-    lda     SWORD_SPRITE_CURRENT
+    lda     SWORD_SPRITE_CURRENT    ;animate with sword sprite the miss
     bcc     player_attack_cont1
     
 player_attack_hit:
