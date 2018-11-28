@@ -55,7 +55,7 @@ char_set:
 	hex 7e 42 04 08 10 10 10 00 ;37 - 7
 	hex 3c 42 42 3c 42 42 3c 00 ;38 - 8
 	hex 3c 42 42 3e 02 04 38 00 ;39 - 9
-	hex 00 00 00 00 00 00 00 00 ;40 - 
+	hex 00 00 00 00 00 00 00 00 ;40 - free
 	hex 00 00 00 18 18 00 00 00 ;41 - projectile (dot)
 	hex ff ff ff ff ff ff ff ff ;42 - solid
 	
@@ -70,12 +70,12 @@ char_set:
 	hex 42 24 5a 3c 3c da 1a 24 ;48 - small creature
 	hex 80 98 a4 db f7 5b 18 34 ;49 - swordsman
 
-	hex aa 55 aa 55 aa 55 aa 55 ;50
-	hex aa 55 aa 55 aa 55 aa 55 ;51
-	hex aa 55 aa 55 aa 55 aa 55 ;52
-	hex aa 55 aa 55 aa 55 aa 55 ;53
-	hex aa 55 aa 55 aa 55 aa 55 ;54
-	hex aa 55 aa 55 aa 55 aa 55 ;55
+	hex 18 25 7e bc 7e 7e 63 73 ;50 - enemy
+	hex 00 00 07 7d ff fe aa 91 ;51 - enemy
+	hex 00 02 36 74 ba 7c 24 62 ;52 - enemy
+	hex 03 1e 67 bd a7 be 76 55 ;53 - enemy
+	hex 00 3c 5a 3c 3e 77 aa aa ;54 - enemy
+	hex 55 aa 7e 2d a6 5b b6 7c ;55 - enemy
 	
 	hex 10 3c 18 18 18 18 18 08 ;56 - sword down
 	hex 08 18 18 18 18 18 3c 10 ;57 - sword up

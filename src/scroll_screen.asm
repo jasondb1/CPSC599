@@ -18,11 +18,18 @@ ending:
     bne     intro_game_over
     lda     #<title_text
     ldx     #>title_text
-    jmp     intro_display_text
+    bne     intro_display_text
 
 intro_game_over:
+    cmp     #2              ;if gameover = 2 then game is won
+    bne     intro_game_died
     lda     #<ending_text
     ldx     #>ending_text
+    bne     intro_display_text
+    
+intro_game_died:
+    lda     #<died_text
+    ldx     #>died_text
  
 ;can display regular text on blank screen if desired here.
 intro_display_text:
@@ -44,7 +51,8 @@ intro_loop:
     bne     intro_loop
     
     ;events related to animation timer, smaller is faster
-    lda     #3
+    ;lda     #3
+    lda     #1  ;for testing restore ^ value
     sta     COUNTDOWN
     
     ;move screen

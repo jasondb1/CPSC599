@@ -5,7 +5,7 @@
 
 movePlayer:
     txa
-    bne     move_player_start ;if no movement
+    bne     move_player_start ;if movement >0
     rts
 
 move_player_start:
@@ -24,8 +24,6 @@ move_player_start:
 move_player_left: 
     asl 
     bcc     move_player_right
-    ldx     #CHAR_SWORD_L
-    stx     SWORD_SPRITE_CURRENT
     ldx     #CHAR_PLAYER_L
     stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERX
@@ -44,8 +42,6 @@ move_player_left:
 move_player_right: 
     asl     
     bcc     move_player_down
-    ldx     #CHAR_SWORD_R
-    stx     SWORD_SPRITE_CURRENT
     ldx     #CHAR_PLAYER_R
     stx     PLAYER_SPRITE_CURRENT
     inc    	PLAYERX
@@ -64,8 +60,6 @@ move_player_right:
 move_player_down: 
     asl    
     bcc     move_player_up
-    ldx     #CHAR_SWORD_D
-    stx     SWORD_SPRITE_CURRENT
     ldx     #CHAR_PLAYER_D
     stx     PLAYER_SPRITE_CURRENT
     inc     PLAYERY
@@ -85,8 +79,6 @@ move_player_down:
 move_player_up: 
     asl     
     bcc     move_player_cont
-    ldx     #CHAR_SWORD_U
-    stx     SWORD_SPRITE_CURRENT
     ldx     #CHAR_PLAYER_U
     stx     PLAYER_SPRITE_CURRENT
     dec     PLAYERY
@@ -103,13 +95,6 @@ move_player_up:
     sty     PLAYERY
 
 move_player_draw_board:
-    ;store the player and sword sprites from movement
-    ;stx     SWORD_SPRITE_CURRENT
-    ;clc
-    ;txa     
-    ;adc     #4          ;distance apart between the sword and character sprite
-    ;sta     PLAYER_SPRITE_CURRENT
-
     jsr     drawBoard
     
 move_player_cont:
@@ -133,7 +118,6 @@ move_player_draw_char:
     ;draw player in new position
     ldy     PLAYERY
     ldx     PLAYERX
-
     lda     PLAYER_SPRITE_CURRENT
     jsr     put_char
     sta     CHARUNDERPLAYER
@@ -155,7 +139,8 @@ move_player_end:
 ; a - the character under the player
 ;
 check_items:
-check_items_check_item1:
+
+check_items_item1:
     ;is it the castle door?
     cmp     #10
     bne     check_items_item2
@@ -164,52 +149,20 @@ check_items_check_item1:
     lda     PLAYERHASKEY
     beq     check_items_end
     dec     PLAYERHASKEY
-    lda     #4
-    sta     PLAYERX
-    sta     PLAYERY
-    lda     #MAP_START_LEVEL2_X
-    sta     MAPX
-    lda     #MAP_START_LEVEL2_Y
-    sta     MAPY
-    inc     LEVEL
-    ; need to swap base tiles
     
-    ;lda     #CHAR_BASE_CASTLE
-    ;sta     CHAR_BASE
-    lda     #CHAR_BORDER_CASTLE
-    sta     CHAR_BORDER
-    lda     #2  
-    sta     char_color+1
-    
+    jsr     new_level
     jsr     drawBoard           ;redraw the board
+    
+    lda     #CHAR_PLAYER_L      ;spawn player location
+    jsr     spawn_char
+    sty     PLAYERY
+    stx     PLAYERX
+    sta     CHARUNDERPLAYER
+    
     rts
     
 check_items_item2:
-    ;is it the dungeon door?
-    cmp     #11
-    bne     check_items_item3
-    
-    ;check if player has key
-    lda     PLAYERHASKEY
-    beq     check_items_end
-    
-    ;enter new level
-    dec     PLAYERHASKEY
-    lda     #4
-    sta     PLAYERX
-    sta     PLAYERY
-    sta     char_color+1
-    lda     #1
-    sta     char_color+24
-    
-    lda     #MAP_START_LEVEL3_X
-    sta     MAPX
-    lda     #MAP_START_LEVEL3_Y
-    sta     MAPY
-    inc     LEVEL
-
-    jsr     drawBoard           ;redraw the board
-    rts
+    ;this was removed
     
 check_items_item3:
     ;is it the key?
@@ -219,10 +172,10 @@ check_items_item3:
     jsr     replace_base_char
     inc     PLAYERHASKEY
     
-check_items_item4:
+check_items_item4:  ;not currently implemented
     ;found weapon
-    cmp     #8
-    bne     check_items_item5
+    ;cmp     #8
+    ;bne     check_items_item5
     ;TODO: pickup weapon and increase/decrease damage
     
 check_items_item5:
@@ -237,7 +190,7 @@ check_items_item6:
     cmp     #9
     bne     check_items_item7
     ;Pickup BBQ
-    lda     #1
+    lda     #2          ;win condition
     sta     GAMEOVER
     
 check_items_item7:
@@ -245,7 +198,12 @@ check_items_item7:
     cmp     #21
     bne     check_items_end
     jsr     replace_base_char
+    inc     PLAYERHEALTH        ;TODO: maybe increase health by 2?
     inc     PLAYERHEALTH
+    lda     MAX_HEALTH
+    cmp     PLAYERHEALTH
+    bcc     check_items_end
+    sta     PLAYERHEALTH
     
 check_items_end:
     rts
@@ -312,8 +270,10 @@ player_attack_miss:
     lda     #$04
     sta     V3DURATION
 
-    lda     SWORD_SPRITE_CURRENT    ;animate with sword sprite the miss
-    bcc     player_attack_cont1
+    lda     PLAYER_SPRITE_CURRENT    ;animate with sword sprite the miss
+    sec
+    sbc     #4                       ;player sprite and sword are always 4 apart
+    bcs     player_attack_cont1
     
 player_attack_hit:
     lda     #$e0        ;hit noise

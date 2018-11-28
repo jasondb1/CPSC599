@@ -136,20 +136,22 @@ drawBoard:
     jsr     inactivate_all_enemies
    ;load map data
    ;TODO: could increment/decrement MAP_PTR in player when map moves
-    lda     #<map_data
-    sta     MAP_PTR_L
-    lda     #>map_data
-    sta     MAP_PTR_H
-    ldx     MAPX
-    ldy     MAPY
-    jsr     position_to_offset
+    ;lda     #<map_data
+    ;sta     MAP_PTR_L
+    ;lda     #>map_data
+    ;sta     MAP_PTR_H
+    ;ldx     MAPX
+    ;ldy     MAPY
+    ;jsr     position_to_offset
 
     ;deal with high bit (add high bit offset to h)
-    clc
-    txa
-    adc     MAP_PTR_H
-    sta     MAP_PTR_H
-    lda     (MAP_PTR_L),y  
+    ;clc
+    ;txa
+    ;adc     MAP_PTR_H
+    ;sta     MAP_PTR_H
+    ;lda     (MAP_PTR_L),y  
+    jsr     get_map_tile
+    
     sta     TEMP10      ;this holds map_data also used at end of subroutine
     ldy     CHAR_BASE
     ldx     CHAR_BORDER
@@ -317,7 +319,7 @@ drawBoard_other_cont:
     jsr     draw_other
     
 drawBoard_enemies:
-    jsr     prand_newseed
+    jsr     prand
     ldx     #NUM_ENEMIES
 drawBoard_end:  
     jsr     spawnEnemy
@@ -344,15 +346,15 @@ draw_other:
     jsr     draw_tower
     
 draw_other_dungeon_door:
-    lda     TEMP10      ;map data
-    cmp     #$09        ;draw dungeon entrance
-    bne     draw_other_key
-    
-    ldx     #$0a          ;column
-    ldy     #$0a          ;row
-    lda     #11         ;dungeon door
-    jsr     put_char
-    jsr     draw_tower
+    ;lda     TEMP10      ;map data
+    ;cmp     #$09        ;draw dungeon entrance
+    ;bne     draw_other_key
+    ;
+    ;ldx     #$0a          ;column
+    ;ldy     #$0a          ;row
+    ;lda     #11         ;dungeon door
+    ;jsr     put_char
+    ;jsr     draw_tower
 
 draw_other_key: ;can omit this after testing, key is only spawned with boss
     lda     TEMP10      ;map data
@@ -449,7 +451,7 @@ spawn_char:
     
 spawn_char_relocate:
     jsr     prand
-    and     #$0f
+    and     #$0f            ;TODO can replace with prand_between
     adc     #$3
     tay
     sty     SPAWN_Y
@@ -518,7 +520,7 @@ put_char_cont:
     and     #$07             ; clear all but last 3 bits
     sta     (COLORMAP_L),y 
     
-    ;restore CHARPOS_H and COLORMAP_H
+    ;restore CHARPOS_H and COLORMAP_H to point at start of buffer
     lda     TEMP21
     beq     put_char_end
     dec     CHARPOS_H
@@ -590,6 +592,134 @@ animateAttack_enemy:
 
 
 animateAttack_end:
+    rts
+
+;==================================================================
+; new_level - generates new position for boss, exit, and player locations
+;
+new_level:
+
+    jsr    clear_map_tiles
+    inc     LEVEL
+     ;empty map tile for 
+    lda     #3
+    sta     TEMP10 
+    
+new_level_loop:
+    ;draw n number of bosses
+    jsr     find_empty_map_tile
+    lda     (MAP_PTR_L),y 
+    ora     #$0f             ;last 4 bytes will always be 0 because of find_empty_map_tile
+    sta     (MAP_PTR_L),y 
+    
+    ;draw n number of exits
+    jsr     find_empty_map_tile
+    lda     (MAP_PTR_L),y 
+    ora     #$08             ;last 4 bytes will always be 0 because of find_empty_map_tile
+    sta     (MAP_PTR_L),y 
+    
+    dec     TEMP10
+    bpl     new_level_loop
+    
+    ;set player starting position, stored in MAPX and MAPY
+    jsr     find_empty_map_tile
+    
+new_level_new_color
+    jsr     prand
+    and     #$07
+    beq     new_level_new_color
+    sta     char_color+1
+    
+    ;toggle between castle and forest
+    lda     CHAR_BORDER
+    cmp     #CHAR_BORDER_CASTLE
+    beq     new_level_border_tree
+    inc     CHAR_BORDER
+    
+new_level_border_tree:
+    dec     CHAR_BORDER
+
+    rts
+
+;==================================================================
+; find_empty_map_tile - gets an empty map tile
+; note; don't mess with the y value when between this call
+; and when you use the map pointer
+;
+; sets map x, and map y
+; offset is returned in y
+;
+find_empty_map_tile: 
+    ;generate a location for the exit
+    ldx     #1
+    ldy     #23
+    jsr     prand_between
+    sta     MAPX
+    
+    ldx     #1
+    ldy     #MAX_MAP_ROWS+1
+    jsr     prand_between
+    sta     MAPY
+    ;generate random starting location
+
+    ; need to swap base tiles
+    jsr     get_map_tile
+    ora     #$01
+    beq     find_empty_map_tile
+    
+    rts
+
+;==================================================================
+; get_map_tile - gets the map pointer for MAPX, MAPY
+; returns map offset in y
+; returns tile value in a
+;
+get_map_tile:
+    lda     #<map_data
+    sta     MAP_PTR_L
+    lda     #>map_data
+    sta     MAP_PTR_H
+    ldx     MAPX
+    ldy     MAPY
+    jsr     position_to_offset
+
+    ;deal with high bit (add high bit offset to h)
+    clc
+    txa
+    adc     MAP_PTR_H
+    sta     MAP_PTR_H
+    lda     (MAP_PTR_L),y  
+
+    rts
+    
+;==================================================================
+; clear_map_tiles - clears everything off of the map except for borders
+; returns map offset in y
+; returns tile value in a
+;
+clear_map_tiles:
+    lda     #MAX_MAP_ROWS
+    sta     MAPY
+
+clear_map_outer_loop:
+    lda     #22
+    sta     MAPX
+
+clear_map_inner_loop:
+    jsr     get_map_tile    ;this is slow, but small, and only happens on new level
+                            ;so will probably be acceptable
+    and     #$f0            ;keep the high bits for the map pointer
+    sta     (MAP_PTR_L),y
+    
+    dec     MAPX
+    bpl     clear_map_inner_loop
+    ;end inner loop
+    
+    dec     MAPY
+    bpl     clear_map_outer_loop     
+    ;end outer loop
+    
+
     rts
 
 ;==================================================================

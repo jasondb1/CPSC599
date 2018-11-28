@@ -280,12 +280,38 @@ prand:
     asl
     eor     RANDSEED
     beq     prand_newseed
-
+    
 prand_end: 
     sta     RANDSEED
             
     rts
-   
+
+;==================================================================
+; prand_between - A random number between x and y-1
+; max upper bound is 255
+; min lowerbound is 0
+;
+; return a - the random number
+; x - lower bound
+; y - upper bound
+; TODO: this could be more efficient with getting delta and adding prand  as reqd
+
+prand_between:
+
+    ;delta
+    jsr     prand
+    stx     TEMPVAR
+    cmp     TEMPVAR
+    bcc     prand_between   ;if <x regenerate
+    sty     TEMPVAR
+    cmp     TEMPVAR
+    bcs     prand_between   
+    
+    ;return value
+    lda     RANDSEED
+    
+    rts
+
 
 ;==================================================================
 ; keyWait - Waits of any key to be pressed

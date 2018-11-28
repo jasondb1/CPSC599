@@ -16,8 +16,12 @@ spawnEnemy:
     bcs     spawnEnemy_end
 
 spawn_enemy_begin:
-    lda     #48                     ;character type of enemy
+    ldx     #48
+    ldy     #56
+    jsr     prand_between
+    ;lda     #48                     ;character type of enemy
     ora     #$80                    ;high bit makes enemy active
+    ldx     TEMP_ENEMYNUM
     sta     enemy_type,x    
     jsr     spawn_char
 
@@ -134,7 +138,15 @@ move_enemy_individual1:
     
 move_enemy_loop1:               ; this will only run once on individual enemy, 4 times on boss
     ldx     TEMP_ENEMYNUM
-    jsr     enemy_begin_move
+    ;jsr     enemy_begin_move
+    ;reset movement points
+    lda     enemy_speed,x 
+    sta     enemy_move_clock,x
+    
+    ;replace background tile under char
+    lda     enemy_charunder,x
+    jsr     enemy_draw_tile
+    
     
     lda     BOSS_ACTIVE
     beq     move_enemy_individual3
@@ -238,6 +250,7 @@ enemy_attack_hit:
     ;calculate the amount of damage and update player health
     lda     enemy_type,x
     and     #$c0        ;clear all other bits
+    clc
     rol
     rol                 ;bit 7 is now in bit 1, bit 6 is in 0
     rol
@@ -263,8 +276,6 @@ enemy_attack_cont:
     jsr     update_status
 
 enemy_attack_end:
-    rts
-
 move_enemy_cont1:
     lda     BOSS_ACTIVE
     beq     enemy_move_individual6
@@ -450,6 +461,8 @@ inactivate_all_enemies:
 
     lda     #00                     ;character type of enemy
     sta     BOSS_ACTIVE             ;reset boss to not active
+    sta     ATTACK_ACTIVE
+    sta     ENEMY_ATTACK_ACTIVE
     ldx     #NUM_ENEMIES
 
 inactivate_all_enemies_loop:
@@ -481,8 +494,8 @@ dir_to_player_right:
 dir_to_player_down: 
     ldy     enemy_y,x
     cpy     PLAYERY
-    bcs     dir_to_player_up
     beq     dir_to_player_end
+    bcs     dir_to_player_up
     ora     #DOWN
     bcc     dir_to_player_end
     
@@ -546,23 +559,23 @@ execute_move_end:
 
 
 ;==================================================================
-; enemy_begin_move
+; enemy_begin_move (removed when boss combined with enemy move)
 ;
 ; x - enemy to move
 ;
-enemy_begin_move:
-    lda     enemy_speed,x        ;reset movement points
-    sta     enemy_move_clock,x
+;enemy_begin_move:
+    ;lda     enemy_speed,x        ;reset movement points
+    ;sta     enemy_move_clock,x
     
     ;replace background tile under char
-    lda     enemy_charunder,x
-    jsr     enemy_draw_tile
+    ;lda     enemy_charunder,x
+    ;jsr     enemy_draw_tile
     
-    rts
+    ;rts
    
    
 ;==================================================================
-; activate_attack
+; activate_attack (removed when boss combined with enemy move)
 ;
 ;   common code for attack activation
 ;

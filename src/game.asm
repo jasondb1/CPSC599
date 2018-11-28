@@ -81,8 +81,8 @@ CHANCE_TO_HIT       equ #204     ;= 255 * 0.8 modify as needed
 
 ;enemy related
 NUM_ENEMIES         equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
-;SPAWN_CHANCE        equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
-SPAWN_CHANCE       equ #254 ;debug/testing
+SPAWN_CHANCE        equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
+;SPAWN_CHANCE       equ #254 ;debug/testing
 
 ENEMY_SMOL		    equ #53
 
@@ -92,12 +92,8 @@ DOWN                equ #$20
 RIGHT               equ #$40
 LEFT                equ #$80
 
-MAP_START_LEVEL1_X  equ #1
-MAP_START_LEVEL1_Y  equ #1
-MAP_START_LEVEL2_X  equ #5
-MAP_START_LEVEL2_Y  equ #12
-MAP_START_LEVEL3_X  equ #19
-MAP_START_LEVEL3_Y  equ #14
+MAX_MAP_ROWS        equ #13     ;set this to the number of rows in map_data
+MAX_HEALTH          equ #16     ;set this to game variable later if health upgrades are availabled
 
 DEFAULT_DIFFUCULTY  equ #3
 
@@ -314,7 +310,9 @@ init:
     lda     #8
     sta     $900f
     
-
+    ;The intro needs to be here before initializing variables otherwise
+    ;some of the variables used with basic routines could get overwritten
+    jsr     intro ; disable for testing  
     
     ;0 initial values in cassette buffer
     lda     #$00
@@ -322,14 +320,8 @@ init:
 init_loop1:
     sta     $033c,x
     dex
-    bne     init_loop1   
-    
-    ;The intro needs to be here before initializing variables otherwise
-    ;some of the zp variables could get overwritten
-    
-;enable after testing
-    ;jsr     intro ; disable for testing  
-    
+    bne     init_loop1  
+
     ldx     #$19
 init_loop2
     sta     $57,x
@@ -363,7 +355,7 @@ init_loop2
     ;initial player 
     sta     PLAYERSPEED
     
-    lda     #16
+    lda     #MAX_HEALTH
     sta     PLAYERHEALTH
     
     ;set border character for first level
@@ -398,7 +390,7 @@ init_loop2
     stx     PLAYERX
     sta     CHARUNDERPLAYER
 
-    jsr     wait_for_user_input
+    ;jsr     wait_for_user_input
 
 ;==================================================================
 ; mainLoop
@@ -438,6 +430,7 @@ main_loop_move_cont:
     beq     mainLoop
     
     jsr     ending
+    jmp     init
     
 ;==================================================================
 ; finished - cleanup and end
@@ -481,7 +474,10 @@ ending_text:
           dc.b    "YOUR STEAK IS RUINED!", $0d, $0d      
           dc.b    "YOU ARE MAD!", $0d          
           dc.b    $0d       
-          dc.b    "THE END.", $0d ,$00          
+          dc.b    "THE END.", $0d ,$00     
+          
+died_text
+          dc.b    "YOU DIED", $00
 
 ;map data - holds exit and other information
 ;note maps are 22 screens wide and up to 256 tall
@@ -516,45 +512,46 @@ ending_text:
 ;f - spawn boss (do not spawn other enemies?)
 ;e 
 ; spawn enemies as normal <14 (can move this up or down if required just change code in graphics.asm
-;c - draw river - vertical with bridge
-;b - draw river - horiz with bridge
-;a - draw lake
+;c - draw river - vertical with bridge ; not implemented
+;b - draw river - horiz with bridge ; not implemented
+;a - draw lake ; not implemented
 ;9 - draw dungeon entrance
 ;8 - draw castle entrance
-;7 - draw house/hut
+;7 - draw house/hut ; not implemented
 ;6 
-;5 - spawn bbq
-;4 - spawn key
+;5 - spawn bbq ; removed only spawns with end boss
+;4 - spawn key ; removed spawns with boss to save space
 ;3 - 
 ;2 - 
 ;1 - 
 ;0 - Spawn enemies as normal
 
 ;starts at top left of map, can partition into other areas, just adjust map position
-; must be 22 wide
+; must be 22 wide for offset calculation to work (currently uses the screen dimensions for offset)
 ; forest: 1,1 thru 13,8
 ; castle: 1,9 thru 13,16
 
 ;TODO:This could be procedurally generated if space/time permits
+; if you alter the rows set the constan MAX_MAP_ROWS to be the same
 map_data: ;              <<<  forest (area 1)    |  dungeon  area (3)>>
 ;          1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22
-    hex    D4 90 10 10 10 10 10 10 10 10 10 10 50 90 10 10 10 10 10 15 10 50
-    hex    Cf 88 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    A0 60 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    90 10 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    a0 20 20 20 20 20 20 20 20 20 20 20 60 80 00 00 00 00 00 00 00 40
+    hex    D4 90 10 10 10 10 10 10 10 10 10 10 50 90 10 10 10 10 10 15 10 50;1
+    hex    Cf 88 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;2
+    hex    A0 60 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;3
+    hex    90 10 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;4
+    hex    80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40;5
+    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;6
+    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;7
+    hex    a0 20 20 00 20 20 20 20 20 20 20 20 60 80 00 00 00 00 00 00 00 40;8
 ; ----------forest ^^^  castle (area 2) vvv   
-    hex    90 10 10 10 10 10 10 10 10 10 10 10 50 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 04 09 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40
-    hex    a0 20 20 20 20 20 20 20 20 20 20 20 60 a0 20 20 20 20 20 20 20 60
+    hex    90 10 10 00 10 10 10 10 10 10 10 10 50 80 00 00 00 00 00 00 00 40;9
+    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;10
+    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;11
+    hex    80 00 00 00 04 08 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;12
+    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;13
+    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;14
+    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;15
+    hex    a0 20 20 20 20 20 20 20 20 20 20 20 60 a0 20 20 20 20 20 20 20 60;16
 
 ;==================================================================
 ;Colors
@@ -579,7 +576,7 @@ char_color  hex 00 05 01 03 03 07 03 04 ;0-7
             ;for enemies bits  6 and 7 (high) are for enemy difficulty calcluated as level + diffficulty so player health when hit is health-= level + 1 + difficulty
             ;bits 3,4,5 are for health and is calculated as base + 4 * health
             hex 02 01 02 06 33 33 33 33 ;40-47
-            hex 11 c1 c9 01 01 01 01 01 ;48-55
+            hex 01 41 49 81 81 c1 c1 c1 ;48-55
             hex 01 01 01 01 07 07 07 07 ;56-63
             
 ;must go last because the address is after all of this code
