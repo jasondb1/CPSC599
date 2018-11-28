@@ -115,29 +115,55 @@ moveEnemy:
     lda     enemy_type,x        ;check if enemy active
     and     #$80
     beq     move_enemy_done             
-    
+
+move_enemy_check_clock:    
     lda     enemy_move_clock,x  ;check if clock expired
     beq     move_enemy_begin
 
 move_enemy_done:
     rts
     
-move_enemy_begin:    
+move_enemy_begin:
+    lda     BOSS_ACTIVE
+    beq     move_enemy_individual1
+    ldx     #3
+    ;stx     TEMP_ENEMYNUM
+
+move_enemy_individual1:
     stx     TEMP_ENEMYNUM
-    ;lda     enemy_speed,x        ;reset movement points
-    ;sta     enemy_move_clock,x
     
-    ;replace background tile under char
-    ;lda     enemy_charunder,x
-    ;jsr     enemy_draw_tile
-    
+move_enemy_loop1:               ; this will only run once on individual enemy, 4 times on boss
+    ldx     TEMP_ENEMYNUM
     jsr     enemy_begin_move
     
+    lda     BOSS_ACTIVE
+    beq     move_enemy_individual3
+    dec     TEMP_ENEMYNUM
+    bpl     move_enemy_loop1
+    
+    
+move_enemy_individual3:
     ;compute next move
     jsr     dir_to_player
     jsr     pick_move
+    sta     TEMP11
+    
+    lda     BOSS_ACTIVE
+    beq     move_enemy_individual4
+    ldx     #3
+        
+move_enemy_loop2:
+move_enemy_individual4:
+    lda     TEMP11
     jsr     execute_move
     
+    lda     BOSS_ACTIVE
+    beq     move_enemy_individual5
+    dex
+    bpl     move_enemy_loop2
+    ldx     #0
+    
+move_enemy_individual5:
 move_enemy_cont:
     
     ;collision check
@@ -158,6 +184,24 @@ move_enemy_cont2:
     sta     enemy_x,x
     lda     TEMP2
     sta     enemy_y,x
+    
+    ;if boss can check if player character under any of the sprites, no other obstacle should be presend
+    
+    ;reverse move if character is unable to move
+    ;lda     TEMP11              ;note only one bit is set so testing for 1 in left or down
+                                ;causes move to be reversed with a shift right
+                                ; and when bits 6 or 4 are set will reverse with a shift left
+    ;and     #$a0
+    ;beq     move_enemy_cont3
+    ;lsr     TEMP11                ;reverses the move
+    ;bne     move_enemy_cont4 
+    
+move_enemy_cont3:
+    ;asl     TEMP11
+
+move_enemy_cont4:
+    ;lda    TEMP11
+    ;jsr    execute_move
     
     ;check if enemy attacks player
     pla
@@ -222,13 +266,24 @@ enemy_attack_end:
     rts
 
 move_enemy_cont1:
+    lda     BOSS_ACTIVE
+    beq     enemy_move_individual6
+    ldx     #3
+    stx     TEMP_ENEMYNUM
 
+enemy_move_individual6:
+enemy_move_loop3:
     ;draw enemy in new position
     ldx     TEMP_ENEMYNUM
     lda     enemy_type,x
     jsr     enemy_draw_tile
 
-    
+    lda     BOSS_ACTIVE
+    beq     enemy_move_individual7
+    dec     TEMP_ENEMYNUM
+    bpl     enemy_move_loop3
+
+enemy_move_individual7:
     ;step sound
     lda     #$a0
     sta     VOICE3
@@ -248,89 +303,93 @@ move_enemy_end:
 moveBoss:
     
     lda     BOSS_ACTIVE  
-    beq     move_boss_done
-    ldx     #0
-    lda     enemy_move_clock,x  ;check if clock expired
-    beq     move_boss_begin
-
-move_boss_done:
-    rts
-    
-move_boss_begin:     
-    ldx     #3
-    stx     TEMP_ENEMYNUM
-    
-move_boss_loop0:    
-    ;clears the area underneath the boss
-    ldx     TEMP_ENEMYNUM
-    jsr     enemy_begin_move
-    dec     TEMP_ENEMYNUM
-    bpl     move_boss_loop0
-    
-    
-    ;pick where enemy moves
-    jsr     dir_to_player
-    jsr     pick_move
-    sta     TEMP11
-    
-    ldx     #3
-move_boss_loop2:   
-    lda     TEMP11
-    jsr     execute_move
-    
-move_boss_cont2:
-    dex
-    bpl     move_boss_loop2
-    
-move_boss_cont:
+    beq     move_enemy_end
     ldx     #0
     
-    ;TODO check collision that returns a status code - 0 no collision 1, collision with player,
-    ;collision with border or element
+    ;new
+    jmp     move_enemy_check_clock
     
-    ;collision check
-    ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
-    ldy     enemy_y,x
-    lda     enemy_x,x
-    tax
-    jsr     get_char
-    cmp     #WALKABLE
-    bcc     move_boss_cont1
-    
-    ;if player then attack
-    cmp     #60
-    bcc     move_boss_cont3
-    ;do attack code
-    
-    
-move_boss_cont3:
-    ;TODO: restore previous position properly by moving boss back from where he came from 
-    ldx     TEMP_ENEMYNUM
-    lda     TEMP3        ;restore last coordinates of enemy
-    sta     enemy_x,x
-    lda     TEMP2
-    sta     enemy_y,x
-    
-move_boss_cont1:
-    ldx     #3
-    stx     TEMP_ENEMYNUM
-move_boss_loop1:
-    ldx     TEMP_ENEMYNUM
-    ;draw enemy in new position
-    lda     enemy_type,x
-    jsr     enemy_draw_tile
-    
-    dec     TEMP_ENEMYNUM
-    bpl     move_boss_loop1
-    
-    ;step sound
-    lda     #$a0
-    sta     VOICE3
-    lda     #$2
-    sta     V3DURATION
-
-move_boss_end:
-    rts
+;    lda     enemy_move_clock,x  ;check if clock expired
+;    beq     move_boss_begin;
+;
+;move_boss_done:
+;    rts
+;    
+;move_boss_begin:     
+;    ldx     #3
+;    stx     TEMP_ENEMYNUM
+;    
+;move_boss_loop0:    
+;    ;clears the area underneath the boss
+;    ldx     TEMP_ENEMYNUM
+;    jsr     enemy_begin_move
+;    dec     TEMP_ENEMYNUM
+;    bpl     move_boss_loop0
+;    
+;    
+;    ;pick where enemy moves
+;    jsr     dir_to_player
+;    jsr     pick_move
+;    sta     TEMP11
+;    
+;    ldx     #3
+;move_boss_loop2:   
+;    lda     TEMP11
+;    jsr     execute_move
+;    
+;move_boss_cont2:
+;    dex
+;    bpl     move_boss_loop2
+;    
+;move_boss_cont:
+;    ldx     #0
+;    
+;    ;TODO check collision that returns a status code - 0 no collision 1, collision with player,
+;    ;collision with border or element
+;    
+;    ;collision check
+;    ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
+;    ldy     enemy_y,x
+;    lda     enemy_x,x
+;    tax
+;    jsr     get_char
+;    cmp     #WALKABLE
+;    bcc     move_boss_cont1
+;    
+;    ;if player then attack
+;    cmp     #60
+;    bcc     move_boss_cont3
+;    ;do attack code
+;    
+;    
+;move_boss_cont3:
+;    ;TODO: restore previous position properly by moving boss back from where he came from 
+;    ldx     TEMP_ENEMYNUM
+;    lda     TEMP3        ;restore last coordinates of enemy
+;    sta     enemy_x,x
+;    lda     TEMP2
+;    sta     enemy_y,x
+;    
+;move_boss_cont1:
+;    ldx     #3
+;    stx     TEMP_ENEMYNUM
+;move_boss_loop1:
+;    ldx     TEMP_ENEMYNUM
+;    ;draw enemy in new position
+;    lda     enemy_type,x
+;    jsr     enemy_draw_tile
+;    
+;    dec     TEMP_ENEMYNUM
+;    bpl     move_boss_loop1
+;    
+;    ;step sound
+;    lda     #$a0
+;    sta     VOICE3
+;    lda     #$2
+;    sta     V3DURATION;
+;
+;move_boss_end:
+;    rts
     
     
 ;==================================================================
