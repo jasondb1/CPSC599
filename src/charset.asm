@@ -55,7 +55,7 @@ char_set:
 	hex 7e 42 04 08 10 10 10 00 ;37 - 7
 	hex 3c 42 42 3c 42 42 3c 00 ;38 - 8
 	hex 3c 42 42 3e 02 04 38 00 ;39 - 9
-	hex 00 00 00 00 00 00 00 00 ;40 - free
+	hex 60 60 60 60 60 60 7e 00 ;40 - L
 	hex 00 00 00 18 18 00 00 00 ;41 - projectile (dot)
 	hex ff ff ff ff ff ff ff ff ;42 - solid
 	

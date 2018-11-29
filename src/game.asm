@@ -81,7 +81,7 @@ HEALTH_CHANCE       equ #70      ;chance of spawning health
 CHANCE_TO_HIT       equ #204     ;= 255 * 0.8 modify as needed
 
 ;enemy related
-NUM_ENEMIES         equ #4  ;(enemies-1 for 0 indexing - 5 allowed in this case)
+NUM_ENEMIES         equ #6  ;(enemies-1 for 0 indexing - 5 allowed in this case)
 SPAWN_CHANCE        equ #90 ;x/255 chance of enemy spawning (freeze when no enemy spawned)
 ;SPAWN_CHANCE       equ #254 ;debug/testing
 
@@ -96,7 +96,7 @@ LEFT                equ #$80
 MAX_MAP_ROWS        equ #13     ;set this to the number of rows in map_data
 MAX_HEALTH          equ #16     ;set this to game variable later if health upgrades are availabled
 
-DEFAULT_DIFFUCULTY  equ #3
+MAX_LEVELS          equ #5      ;3-7 are good values - this might be a user config option later
 
 
 ;==================================================================
@@ -199,8 +199,8 @@ V2DURATION          equ $68
 V3DURATION          equ $69
 VNDURATION          equ $6a
 
-;free               equ $6b
-;free               equ $6c
+CHAR_BORDER         equ $6b
+ATTACK_CHARUNDER    equ $6c
 
 CURRENTNOTE_BASS    equ $6d
 NOTEDURATION        equ $6e
@@ -236,18 +236,14 @@ enemy_x                 equ $033c + ((NUM_ENEMIES + 1) * 4)
 enemy_y                 equ $033c + ((NUM_ENEMIES + 1) * 5)  
 enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)  
 
-;attack animation
-ATTACK_CHARUNDER        equ $033c + ((NUM_ENEMIES + 1) * 7)      
-
 ;used to keep track of number of enemies killed
-ENEMY_KILLED_L          equ ATTACK_CHARUNDER + 1
+ENEMY_KILLED_L          equ $033c + ((NUM_ENEMIES + 1) * 7) 
 ENEMY_KILLED_H          equ ENEMY_KILLED_L + 1
 
 SPAWN_X                 equ ENEMY_KILLED_H + 1
 SPAWN_Y                 equ ENEMY_KILLED_H + 2
 TEMPVAR			        equ ENEMY_KILLED_H + 3
-CHAR_BORDER             equ ENEMY_KILLED_H + 4
-CHAR_BASE               equ ENEMY_KILLED_H + 5
+CHAR_BASE               equ ENEMY_KILLED_H + 4
 
 ;used for boss spawning
 BOSS_ACTIVE             equ ENEMY_KILLED_H + 6
@@ -348,7 +344,7 @@ init_loop2:
     lda     #MAX_HEALTH
     sta     PLAYERHEALTH
     
-    lda     #DEFAULT_DIFFUCULTY
+    lda     #MAX_LEVELS
     sta     HIGHEST_LEVEL
     
     ;set border character for first level
@@ -458,7 +454,7 @@ length_text:
           dc.b    "FIRE TO START", $00
           
 ending_text:
-          dc.b    "YOU WIN BUT YOUR", $0d,
+          dc.b    "YOU WIN BUT YOUR", $0d
           dc.b    "STEAK IS RUINED!", $0d, $0d              
           dc.b    "THE END.", $00     
           

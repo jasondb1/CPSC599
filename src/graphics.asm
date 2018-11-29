@@ -12,7 +12,6 @@ update_status:
 update_status_cont1:
     lda     #BLACK
 
-
 update_status_health:     
     sta     COLORMAPSTATUS + 31
     ldy     #0
@@ -33,6 +32,14 @@ update_status_health_cont:
     cpy     #8   
     bne     update_status_health_loop
 
+    ;display level
+    clc
+    lda     #30
+    adc     LEVEL
+    sta     SCREENSTATUS + 3
+    lda     #PURPLE
+    sta     COLORMAPSTATUS + 3
+    
     ;display money
     lda     #YELLOW
     sta     COLORMAPSTATUS+24
@@ -110,6 +117,12 @@ drawScreen_loop
         
     ;draw all of the status indicators, but leave them black, color them in update status when
     ; they are active
+    
+    ;L
+    lda     #40
+    sta     SCREENSTATUS + 2
+    lda     #PURPLE
+    sta     COLORMAPSTATUS + 2
     
     ; key icon
     lda     #8
@@ -646,14 +659,21 @@ new_level_new_color
 ; offset is returned in y
 ;
 find_empty_map_tile: 
-    ldx     #1
-    ldy     #23
-    jsr     prand_between
+    ;number between 1 and 22 inclusive
+    jsr     prand
+    and     #$0f    ;0-15
+    sta     TEMP20
+    jsr     prand
+    and     #$07    ;0-7
+    clc
+    adc     TEMP20
     sta     MAPX
-    
-    ldx     #1
-    ldy     #MAX_MAP_ROWS+1
-    jsr     prand_between
+     
+find_empty_map_tile_loop1:
+    jsr     prand
+    and     #$0f    ;0-15
+    cmp     #MAX_MAP_ROWS + 1
+    bcs     find_empty_map_tile_loop1
     sta     MAPY
 
     jsr     get_map_tile
@@ -681,7 +701,7 @@ get_map_tile:
     txa
     adc     MAP_PTR_H
     sta     MAP_PTR_H
-    lda     (MAP_PTR_L),y  
+    lda     (MAP_PTR_L),y
 
     rts
     
@@ -701,15 +721,15 @@ clear_map_outer_loop:
 clear_map_inner_loop:
     jsr     get_map_tile    ;this is slow, but small, and only happens on new level
                             ;so will probably be acceptable
-    and     #$f0            ;keep the high bits for the map pointer
+   
     sta     (MAP_PTR_L),y
     
     dec     MAPX
-    bpl     clear_map_inner_loop
+    bne     clear_map_inner_loop
     ;end inner loop
     
     dec     MAPY
-    bpl     clear_map_outer_loop     
+    bne     clear_map_outer_loop     
     ;end outer loop
     
 

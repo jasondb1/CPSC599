@@ -150,9 +150,10 @@ check_items_item1:
     
     ;check if player has key
     lda     PLAYERHASKEY
-    beq     check_items_end
+    ;beq     check_items_end
+    beq     check_items_item2   
     dec     PLAYERHASKEY
-    
+ 
     jsr     new_level
     jsr     drawBoard           ;redraw the board
     
@@ -289,9 +290,9 @@ player_attack_miss:
     lda     #$04
     sta     V3DURATION
 
-    lda     PLAYER_SPRITE_CURRENT    ;animate with sword sprite the miss
+    lda     PLAYER_SPRITE_CURRENT    ;animate with sword sprite the miss player sprite and sword are always 4 apart
     sec
-    sbc     #4                       ;player sprite and sword are always 4 apart
+    sbc     #4                       
     bcs     player_attack_cont1
     
 player_attack_hit:
