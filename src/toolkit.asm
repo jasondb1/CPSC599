@@ -280,7 +280,7 @@ prand:
     asl
     eor     RANDSEED
     beq     prand_newseed
-    
+
 prand_end: 
     sta     RANDSEED
             
@@ -297,8 +297,6 @@ prand_end:
 ; TODO: this could be more efficient with getting delta and adding prand  as reqd
 
 prand_between:
-
-    ;delta
     jsr     prand
     stx     TEMPVAR
     cmp     TEMPVAR
@@ -308,7 +306,7 @@ prand_between:
     bcs     prand_between   
     
     ;return value
-    lda     RANDSEED
+    ;lda     RANDSEED
     
     rts
 

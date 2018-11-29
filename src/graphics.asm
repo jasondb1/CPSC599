@@ -212,18 +212,18 @@ drawBoard_inner:
     
     ;test for borders
     lda     TEMP21              ;row
-    cmp     #SCREENTOP + 2
+    cmp     #SCREENTOP + 3
     bcs     drawBoard_test_border_bottom
     
     ;if first 2 or last 2 cols - draw border pieces so all corners are borders
     lda     TEMP20              ;column
-    cmp     #SCREENLEFT + 2
+    cmp     #SCREENLEFT + 3 + CORNER_LENGTH
     bcs     drawBoard_test_border_top_cont
     lda     CHAR_BORDER
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_top_cont:
-    cmp     #SCREENRIGHT - 1
+    cmp     #SCREENRIGHT - 2 - CORNER_LENGTH
     bcc     drawBoard_test_border_top_cont1
     lda     CHAR_BORDER
     bcs     drawBoard_to_screen
@@ -234,17 +234,17 @@ drawBoard_test_border_top_cont1:
     
 drawBoard_test_border_bottom:
     lda     TEMP21              ;row
-    cmp     #SCREENBOTTOM - 1
+    cmp     #SCREENBOTTOM - 2
     bcc     drawBoard_test_border_left
     ;if first 2 or last 2 cols - draw border
     lda     TEMP20              ;column
-    cmp     #SCREENLEFT + 2
+    cmp     #SCREENLEFT + 3 + CORNER_LENGTH
     bcs     drawBoard_test_border_bottom_cont
     lda     CHAR_BORDER
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_bottom_cont:
-    cmp     #SCREENRIGHT - 1
+    cmp     #SCREENRIGHT - 2 - CORNER_LENGTH
     bcc     drawBoard_test_border_bottom_cont1
     lda     CHAR_BORDER
     bcs     drawBoard_to_screen
@@ -255,13 +255,13 @@ drawBoard_test_border_bottom_cont1:
 
 drawBoard_test_border_left:
     lda     TEMP20
-    cmp     #SCREENLEFT + 2
+    cmp     #SCREENLEFT + 3 
     bcs     drawBoard_test_border_right
     lda     BORDERLEFT
     bcc     drawBoard_to_screen
 
 drawBoard_test_border_right:    
-    cmp     #SCREENRIGHT - 1
+    cmp     #SCREENRIGHT - 2 
     bcc     drawBoard_test_random_elements
     lda     BORDERRIGHT
     bcs     drawBoard_to_screen
@@ -631,13 +631,9 @@ new_level_new_color
     sta     char_color+1
     
     ;toggle between castle and forest
-    lda     CHAR_BORDER
-    cmp     #CHAR_BORDER_CASTLE
-    beq     new_level_border_tree
-    inc     CHAR_BORDER
-    
-new_level_border_tree:
-    dec     CHAR_BORDER
+    lda     #23
+    adc     #0
+    sta     CHAR_BORDER
 
     rts
 
@@ -650,7 +646,6 @@ new_level_border_tree:
 ; offset is returned in y
 ;
 find_empty_map_tile: 
-    ;generate a location for the exit
     ldx     #1
     ldy     #23
     jsr     prand_between
@@ -660,12 +655,10 @@ find_empty_map_tile:
     ldy     #MAX_MAP_ROWS+1
     jsr     prand_between
     sta     MAPY
-    ;generate random starting location
 
-    ; need to swap base tiles
     jsr     get_map_tile
-    ora     #$01
-    beq     find_empty_map_tile
+    and     #$0f
+    bne     find_empty_map_tile
     
     rts
 

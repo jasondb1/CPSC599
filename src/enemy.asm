@@ -16,10 +16,10 @@ spawnEnemy:
     bcs     spawnEnemy_end
 
 spawn_enemy_begin:
-    ldx     #48
-    ldy     #56
-    jsr     prand_between
-    ;lda     #48                     ;character type of enemy
+    jsr     prand
+    and     #$07  
+    clc                             ;spawn an enemy between 48 and 56
+    adc     #48                     ;starting char of enemies
     ora     #$80                    ;high bit makes enemy active
     ldx     TEMP_ENEMYNUM
     sta     enemy_type,x    
@@ -307,100 +307,16 @@ move_enemy_end:
 ;==================================================================
 ; moveBoss - moves the enemy
 ;
-; x is offset of enemy 
+; stub that jumps to enemy move/attack routines if boss is active
 ;
-; return x - enemy number
 
 moveBoss:
     
     lda     BOSS_ACTIVE  
     beq     move_enemy_end
     ldx     #0
+    jmp     move_enemy_check_clock      ;carry on with 
     
-    ;new
-    jmp     move_enemy_check_clock
-    
-;    lda     enemy_move_clock,x  ;check if clock expired
-;    beq     move_boss_begin;
-;
-;move_boss_done:
-;    rts
-;    
-;move_boss_begin:     
-;    ldx     #3
-;    stx     TEMP_ENEMYNUM
-;    
-;move_boss_loop0:    
-;    ;clears the area underneath the boss
-;    ldx     TEMP_ENEMYNUM
-;    jsr     enemy_begin_move
-;    dec     TEMP_ENEMYNUM
-;    bpl     move_boss_loop0
-;    
-;    
-;    ;pick where enemy moves
-;    jsr     dir_to_player
-;    jsr     pick_move
-;    sta     TEMP11
-;    
-;    ldx     #3
-;move_boss_loop2:   
-;    lda     TEMP11
-;    jsr     execute_move
-;    
-;move_boss_cont2:
-;    dex
-;    bpl     move_boss_loop2
-;    
-;move_boss_cont:
-;    ldx     #0
-;    
-;    ;TODO check collision that returns a status code - 0 no collision 1, collision with player,
-;    ;collision with border or element
-;    
-;    ;collision check
-;    ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
-;    ldy     enemy_y,x
-;    lda     enemy_x,x
-;    tax
-;    jsr     get_char
-;    cmp     #WALKABLE
-;    bcc     move_boss_cont1
-;    
-;    ;if player then attack
-;    cmp     #60
-;    bcc     move_boss_cont3
-;    ;do attack code
-;    
-;    
-;move_boss_cont3:
-;    ;TODO: restore previous position properly by moving boss back from where he came from 
-;    ldx     TEMP_ENEMYNUM
-;    lda     TEMP3        ;restore last coordinates of enemy
-;    sta     enemy_x,x
-;    lda     TEMP2
-;    sta     enemy_y,x
-;    
-;move_boss_cont1:
-;    ldx     #3
-;    stx     TEMP_ENEMYNUM
-;move_boss_loop1:
-;    ldx     TEMP_ENEMYNUM
-;    ;draw enemy in new position
-;    lda     enemy_type,x
-;    jsr     enemy_draw_tile
-;    
-;    dec     TEMP_ENEMYNUM
-;    bpl     move_boss_loop1
-;    
-;    ;step sound
-;    lda     #$a0
-;    sta     VOICE3
-;    lda     #$2
-;    sta     V3DURATION;
-;
-;move_boss_end:
-;    rts
     
     
 ;==================================================================
@@ -416,7 +332,7 @@ enemy_draw_tile:
     pha
     ldy     enemy_y,x
     lda     enemy_x,x
-    sty     TEMP2       ;store previous values in case of collision restore
+    sty     TEMP2       ;store previous values in case of collision restore in TEMP2 nd TEMP3
     sta     TEMP3
     tax
     pla
@@ -459,14 +375,14 @@ enemy_at_end:
     
 inactivate_all_enemies:
 
-    lda     #00                     ;character type of enemy
+    lda     #00                     
     sta     BOSS_ACTIVE             ;reset boss to not active
     sta     ATTACK_ACTIVE
     sta     ENEMY_ATTACK_ACTIVE
     ldx     #NUM_ENEMIES
 
 inactivate_all_enemies_loop:
-    sta     enemy_type,x    
+    sta     enemy_type,x           ;store 0 to all enemies
     dex     
     bpl     inactivate_all_enemies_loop
 

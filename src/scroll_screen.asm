@@ -52,7 +52,7 @@ intro_loop:
     
     ;events related to animation timer, smaller is faster
     ;lda     #3
-    lda     #1  ;for testing restore ^ value
+    lda     #1  ;for testing restore 
     sta     COUNTDOWN
     
     ;move screen

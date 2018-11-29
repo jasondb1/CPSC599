@@ -113,20 +113,23 @@ move_player_cont:
     
 move_player_check_items:
     jsr     check_items
-
+    beq     move_player_end
+    ;bne     move_player_draw_char1  ;unconditional branch
+    
 move_player_draw_char:
+    ;step sound
+    lda     #$a0
+    sta     VOICE3
+    lda     #$2
+    sta     V3DURATION
+
+move_player_draw_char1:
     ;draw player in new position
     ldy     PLAYERY
     ldx     PLAYERX
     lda     PLAYER_SPRITE_CURRENT
     jsr     put_char
     sta     CHARUNDERPLAYER
-    
-    ;step sound
-    lda     #$a0
-    sta     VOICE3
-    lda     #$2
-    sta     V3DURATION
 
     jsr     update_status
 
@@ -158,6 +161,7 @@ check_items_item1:
     sty     PLAYERY
     stx     PLAYERX
     sta     CHARUNDERPLAYER
+    lda     #0
     
     rts
     
@@ -206,6 +210,11 @@ check_items_item7:
     sta     PLAYERHEALTH
     
 check_items_end:
+    ;lda     #$f8        ;pickup item noise
+    ;sta     VOICE3
+    ;lda     #$05
+    ;sta     V3DURATION
+    
     rts
 
 
@@ -234,7 +243,6 @@ player_attack:
 player_attack_skip:
     rts
 
-;TODO: test if attacking offscreen
 player_attack_right:
     inx
     bne     player_attack_cont
@@ -252,6 +260,17 @@ player_attack_up:
 
 
 player_attack_cont:
+    txa
+    cmp     #SCREENLEFT
+    bcc     player_attack_end
+    cmp     #SCREENRIGHT+1
+    bcs     player_attack_end
+    tya
+    cmp     #SCREENTOP
+    bcc     player_attack_end
+    cmp     #SCREENBOTTOM+1
+    bcs     player_attack_end
+
     stx     ATTACK_X
     sty     ATTACK_Y
     jsr     get_char        ;values must be between 44 and 55, could expand if required

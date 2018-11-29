@@ -50,6 +50,7 @@ SCREENRIGHT         equ #22
 SCREENBOTTOM        equ #21
 
 ;background
+CORNER_LENGTH       equ #4
 WALKABLE            equ #23 ; everything below this value can be walked on
 CHAR_BLANK          equ #00
 CHAR_SOLID          equ #42
@@ -237,8 +238,6 @@ enemy_charunder         equ $033c + ((NUM_ENEMIES + 1) * 6)
 
 ;attack animation
 ATTACK_CHARUNDER        equ $033c + ((NUM_ENEMIES + 1) * 7)      
-;ATTACK_X                equ ATTACK_CHARUNDER + 1
-;ATTACK_Y                equ ATTACK_X + 1  
 
 ;used to keep track of number of enemies killed
 ENEMY_KILLED_L          equ ATTACK_CHARUNDER + 1
@@ -247,7 +246,6 @@ ENEMY_KILLED_H          equ ENEMY_KILLED_L + 1
 SPAWN_X                 equ ENEMY_KILLED_H + 1
 SPAWN_Y                 equ ENEMY_KILLED_H + 2
 TEMPVAR			        equ ENEMY_KILLED_H + 3
-;TEMP_ENEMYNUM           equ ENEMY_KILLED_H + 4
 CHAR_BORDER             equ ENEMY_KILLED_H + 4
 CHAR_BASE               equ ENEMY_KILLED_H + 5
 
@@ -274,14 +272,8 @@ PLAYERWEAPONDAMAGE      equ $03f1
 CHARUNDERPLAYER         equ $03f2 
 PLAYERGOLD_H            equ $03f3       ;BCD number
 PLAYERGOLD_L            equ $03f4       ;BCD number
-;PLAYERY                 equ $03f5 ;moved to zero page
-;PLAYERX                 equ $03f6 
+ 
 PLAYERDIR		        equ	$03f7
-
-;MAPX                    equ $03f8  ;moved to zero page
-;MAPY                    equ $03f9
-
-;PLAYERHEALTH            equ $03fa
 
 GAMEOVER                equ $03fb
 
@@ -323,7 +315,7 @@ init_loop1:
     bne     init_loop1  
 
     ldx     #$19
-init_loop2
+init_loop2:
     sta     $57,x
     dex
     bne     init_loop2
@@ -339,9 +331,6 @@ init_loop2
     sta     JOY1_DDRA
  	sta     CHAR_BASE
     
-    ;initial character direction is right (1)
-    ;sta 	PLAYERDIR
-    
     ;map and graphic pointers
     sta     MAPX
     sta     MAPY
@@ -354,16 +343,17 @@ init_loop2
     
     ;initial player 
     sta     PLAYERSPEED
+    sta     COUNTDOWN
     
     lda     #MAX_HEALTH
     sta     PLAYERHEALTH
     
+    lda     #DEFAULT_DIFFUCULTY
+    sta     HIGHEST_LEVEL
+    
     ;set border character for first level
     lda     #23
     sta     CHAR_BORDER 
-    
-    lda     #DEFAULT_DIFFUCULTY
-    sta     HIGHEST_LEVEL
     
     ;initial volume
     lda     #$0f
@@ -429,19 +419,21 @@ main_loop_move_cont:
     lda     GAMEOVER
     beq     mainLoop
     
-    jsr     ending
+    jsr     ending              ;play the ending
+    lda     #0
+    sta     GAMEOVER
     jmp     init
     
 ;==================================================================
 ; finished - cleanup and end
 finished:
     ;lda     #$0
-    sta     VOLUME
+    ;sta     VOLUME
     
-    lda     #240
-    sta     CHARSETSELECT
+    ;lda     #240
+    ;sta     CHARSETSELECT
     
-    rts
+    ;rts
 ;end of game
 
     include     "scroll_screen.asm"
@@ -461,23 +453,19 @@ finished:
 ;text limited to 255 chars long
 title_text:
           dc.b    "WITCHER 0.3", $0d, $0d   
-          dc.b    "BBQ SIDE QUEST",$0d,$0d, $0d
-          ;dc.b    "P BOROWOY", $0d          
-          ;dc.b    "J DEBOER", $0d          
-          ;dc.b    "A MCALLISTER", $0d       
-          ;dc.b    "J WILSON", $0d, $0d
-          dc.b    "PRESS FIRE TO START", $00
+          dc.b    "BBQ SIDE QUEST",$0d,$0d
+length_text:
+          dc.b    "FIRE TO START", $00
           
 ending_text:
-          dc.b    "YOU RETRIEVE THE", $0d
-          dc.b    "SMOULDERING BBQ", $0d, $0d
-          dc.b    "YOUR STEAK IS RUINED!", $0d, $0d      
-          dc.b    "YOU ARE MAD!", $0d          
-          dc.b    $0d       
-          dc.b    "THE END.", $0d ,$00     
+          dc.b    "YOU WIN BUT YOUR", $0d,
+          dc.b    "STEAK IS RUINED!", $0d, $0d              
+          dc.b    "THE END.", $00     
           
-died_text
+died_text:
           dc.b    "YOU DIED", $00
+          
+
 
 ;map data - holds exit and other information
 ;note maps are 22 screens wide and up to 256 tall
