@@ -131,14 +131,13 @@ move_enemy_begin:
     lda     BOSS_ACTIVE
     beq     move_enemy_individual1
     ldx     #3
-    ;stx     TEMP_ENEMYNUM
 
 move_enemy_individual1:
     stx     TEMP_ENEMYNUM
     
 move_enemy_loop1:               ; this will only run once on individual enemy, 4 times on boss
     ldx     TEMP_ENEMYNUM
-    ;jsr     enemy_begin_move
+
     ;reset movement points
     lda     enemy_speed,x 
     sta     enemy_move_clock,x
@@ -146,7 +145,6 @@ move_enemy_loop1:               ; this will only run once on individual enemy, 4
     ;replace background tile under char
     lda     enemy_charunder,x
     jsr     enemy_draw_tile
-    
     
     lda     BOSS_ACTIVE
     beq     move_enemy_individual3
@@ -241,6 +239,7 @@ enemy_attack_miss:
     ;sta     VOICE3
     ;lda     #$04
     ;sta     V3DURATION
+    jsr     sound_miss
     
     lda     #CHAR_MISS
     bne     enemy_attack_cont
@@ -265,6 +264,7 @@ enemy_attack_hit:
     ;hit noise
     
 enemy_attack_cont1:
+    jsr     sound_hit
     lda     #CHAR_HIT
 
 enemy_attack_cont:    
@@ -296,11 +296,8 @@ enemy_move_loop3:
 
 enemy_move_individual7:
     ;step sound
-    lda     #$a0
-    sta     VOICE3
-    lda     #$2
-    sta     V3DURATION
-
+    jsr     sound_step
+    
 move_enemy_end:
     rts
     

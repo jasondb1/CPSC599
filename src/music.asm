@@ -1,3 +1,29 @@
+;sounds
+
+sound_hit:    
+    lda     #$e0        ;hit noise
+    sta     NOISE
+    lda     #$08
+    sta     VNDURATION
+
+    rts
+    
+sound_miss:
+    lda     #$f0        ;miss noise
+    sta     VOICE3
+    lda     #$04
+    sta     V3DURATION
+    
+    rts
+    
+sound_step:
+    lda     #$a0
+    sta     VOICE3
+    lda     #$2
+    sta     V3DURATION
+    
+    rts
+
 
 ;           TABLE OF MUSICAL NOTES
 ;

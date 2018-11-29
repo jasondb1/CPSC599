@@ -113,15 +113,11 @@ move_player_cont:
     
 move_player_check_items:
     jsr     check_items
-    beq     move_player_end
-    ;bne     move_player_draw_char1  ;unconditional branch
-    
+    beq     move_player_end         ;when going through an exit do not redraw the player
+                                    ; or an artifact is created
+                                    
 move_player_draw_char:
-    ;step sound
-    lda     #$a0
-    sta     VOICE3
-    lda     #$2
-    sta     V3DURATION
+
 
 move_player_draw_char1:
     ;draw player in new position
@@ -211,13 +207,19 @@ check_items_item7:
     sta     PLAYERHEALTH
     
 check_items_end:
-    ;lda     #$f8        ;pickup item noise
-    ;sta     VOICE3
-    ;lda     #$05
-    ;sta     V3DURATION
+    cmp     #8
+    bcc     check_items_end1
     
+    lda     #$f8        ;pickup item noise
+    sta     VOICE3
+    lda     #$05
+    sta     V3DURATION
     rts
-
+    
+check_items_end1:
+    ;step sound
+    jmp     sound_step
+    
 
 ;==================================================================
 ; player_attack - performs attack
@@ -276,8 +278,6 @@ player_attack_cont:
     sty     ATTACK_Y
     jsr     get_char        ;values must be between 44 and 55, could expand if required
     sta     ATTACK_CHARUNDER
-    ;cmp     #56
-    ;bcs     player_attack_miss
     cmp     #44
     bcs     player_attack_hit
     
@@ -285,10 +285,7 @@ player_attack_cont:
 player_attack_miss:
     jsr     activate_attack
     ;else miss    
-    lda     #$f0        ;miss noise
-    sta     VOICE3
-    lda     #$04
-    sta     V3DURATION
+    jsr     sound_miss
 
     lda     PLAYER_SPRITE_CURRENT    ;animate with sword sprite the miss player sprite and sword are always 4 apart
     sec
@@ -296,10 +293,7 @@ player_attack_miss:
     bcs     player_attack_cont1
     
 player_attack_hit:
-    lda     #$e0        ;hit noise
-    sta     NOISE
-    lda     #$08
-    sta     VNDURATION
+    jsr     sound_hit
         
     ldx     ATTACK_X
     ldy     ATTACK_Y
@@ -315,7 +309,7 @@ player_attack_hit:
     beq     player_attack_cont2
     jsr     boss_health_decrease
     
-player_attack_cont2
+player_attack_cont2:
     jsr     activate_attack
     lda     #CHAR_HIT
     bne     player_attack_cont1
@@ -323,7 +317,7 @@ player_attack_cont2
 player_attack_enemy_killed:
     lda     BOSS_ACTIVE
     beq     player_attack_cont4
-    jmp    boss_killed
+    jmp     boss_killed
 
 player_attack_cont4:
     lda     #$00            ;deactivate enemy
@@ -339,6 +333,8 @@ player_attack_cont3:
     lda     #CHAR_GOLD
     jsr     spawn_char
     
+    lda     #0
+    sta     ATTACK_ACTIVE
     ;put splat on screen
     lda     #CHAR_SPLAT
     

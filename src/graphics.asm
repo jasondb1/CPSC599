@@ -577,10 +577,11 @@ get_char_end:
 ; animateAttack - resolve attack animations
 animateAttack:
 
-    lda     ATTACKDURATION
-    bne     animateAttack_enemy
     lda     ATTACK_ACTIVE
     beq     animateAttack_enemy
+    lda     ATTACKDURATION
+    bne     animateAttack_enemy
+
     
     ;replace the character underneath the players attack
     lda     ATTACK_CHARUNDER
@@ -721,7 +722,7 @@ clear_map_outer_loop:
 clear_map_inner_loop:
     jsr     get_map_tile    ;this is slow, but small, and only happens on new level
                             ;so will probably be acceptable
-   
+    and     #$f0            ;clear bottom bits
     sta     (MAP_PTR_L),y
     
     dec     MAPX

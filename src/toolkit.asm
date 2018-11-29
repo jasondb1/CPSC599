@@ -320,7 +320,7 @@ display_text_end:
 
 wait_for_user_input:
     jsr     timer
-    jsr     playNote   ;if music is wanted for intro
+    jsr     playMusic   ;if music is wanted for intro
     ;jsr     playBass 
     jsr     playSound
     lda     #$20       ;test fire button

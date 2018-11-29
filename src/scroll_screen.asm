@@ -43,8 +43,7 @@ intro_display_text:
 
 intro_loop:       
     ;animation timer
-    jsr     playNote    ;if music is wanted for intro
-    ;jsr     playBass
+    jsr     playMusic    ;if music is wanted for intro
     jsr     playSound
     jsr     timer
     lda     COUNTDOWN
