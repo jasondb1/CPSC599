@@ -93,7 +93,7 @@ DOWN                equ #$20
 RIGHT               equ #$40
 LEFT                equ #$80
 
-MAX_MAP_ROWS        equ #13     ;set this to the number of rows in map_data
+MAX_MAP_ROWS        equ #10     ;set this to the number of rows in map_data
 MAX_HEALTH          equ #16     ;set this to game variable later if health upgrades are availabled
 
 MAX_LEVELS          equ #5      ;3-7 are good values - this might be a user config option later
@@ -220,7 +220,7 @@ PREVJIFFY           equ $FD
 COUNTDOWN           equ $FE
 
 ;88 bytes should be usable for some stuff once program running
-;0200-0258        512-600        BASIC input buffer--where the charac-
+;0200-0258        512-600       88 bytes BASIC input buffer--where the charac-
 ;                                   ters being INPUT will go.
 BASIC_BUFFER_AREA   equ $0200
 ;not currently used
@@ -243,10 +243,12 @@ ENEMY_KILLED_H          equ ENEMY_KILLED_L + 1
 SPAWN_X                 equ ENEMY_KILLED_H + 1
 SPAWN_Y                 equ ENEMY_KILLED_H + 2
 TEMPVAR			        equ ENEMY_KILLED_H + 3
-CHAR_BASE               equ ENEMY_KILLED_H + 4
+TEMPVAR2		        equ ENEMY_KILLED_H + 4
+TEMPVAR3		        equ ENEMY_KILLED_H + 5
+CHAR_BASE               equ ENEMY_KILLED_H + 6
 
 ;used for boss spawning
-BOSS_ACTIVE             equ ENEMY_KILLED_H + 6
+BOSS_ACTIVE             equ ENEMY_KILLED_H + 7
 BOSS_UL_X               equ BOSS_ACTIVE + 1
 BOSS_UR_X               equ BOSS_ACTIVE + 2
 BOSS_LL_X               equ BOSS_ACTIVE + 3
@@ -273,9 +275,8 @@ PLAYERDIR		        equ	$03f7
 
 GAMEOVER                equ $03fb
 
-;nonzpage 0293-029e (rs232 storage) available for use
-
-
+;nonzpage 0293-029e (rs232 storage) available for use 
+    org     $0293
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;basic stub start
@@ -529,9 +530,9 @@ map_data: ;              <<<  forest (area 1)    |  dungeon  area (3)>>
     hex    a0 20 20 00 20 20 20 20 20 20 20 20 60 80 00 00 00 00 00 00 00 40;8
 ; ----------forest ^^^  castle (area 2) vvv   
     hex    90 10 10 00 10 10 10 10 10 10 10 10 50 80 00 00 00 00 00 00 00 40;9
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;10
-    hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;11
-    hex    80 00 00 00 04 08 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;12
+    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;10
+    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;11
+    ;hex    80 00 00 00 04 08 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;12
     ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;13
     ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;14
     ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;15

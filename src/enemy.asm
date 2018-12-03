@@ -115,6 +115,11 @@ spawn_boss_end:
 ; return x - enemy number
 
 moveEnemy:
+
+    lda     #0
+    sta     TEMPVAR3
+    sta     TEMPVAR2
+
     
     lda     enemy_type,x        ;check if enemy active
     and     #$80
@@ -168,16 +173,23 @@ move_enemy_individual4:
     jsr     execute_move
     
     lda     BOSS_ACTIVE
-    beq     move_enemy_individual5
+    beq     move_enemy_cont
     dex
     bpl     move_enemy_loop2
-    ldx     #0
+    ;ldx     #0
     
-move_enemy_individual5:
+
 move_enemy_cont:
     
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
+    lda     BOSS_ACTIVE
+    beq     move_enemy_cont5
+    ldx     #3
+    stx     TEMP_ENEMYNUM
+    
+move_enemy_cont5:
+    ldx     TEMP_ENEMYNUM
     ldy     enemy_y,x
     sty     ENEMY_ATTACK_Y
     lda     enemy_x,x
@@ -185,36 +197,66 @@ move_enemy_cont:
     tax
     jsr     get_char
     cmp     #WALKABLE
-    bcc     move_enemy_cont1
-    pha
+    bcc     move_enemy_cont9        ;is walkable 
+    sta     TEMPVAR                 ;temporarily store character under the space to move
+    
+    cmp     #60
+    bcc     move_enemy_cont8
+    inc     TEMPVAR3                ;flag set if enemy can attack player
+    
+move_enemy_cont8:
+   ;check if boss character
+
+    inc     TEMPVAR2                ;TEMPVAR2 is flag if enemy is blocked set flag, or if off screen
+    ;TODO check not off screen
+    
+move_enemy_cont9:
+    lda     BOSS_ACTIVE
+    beq     move_enemy_cont2
+    dec     TEMP_ENEMYNUM
+    bpl     move_enemy_cont5
         
 move_enemy_cont2:
+    lda     TEMPVAR2
+    beq     move_enemy_cont1
+
+    lda     BOSS_ACTIVE
+    bne     move_enemy_cont6
+;;end of loop    
+
+
+    ;move non boss enemy back to location
     ldx     TEMP_ENEMYNUM
     lda     TEMP3                    ;restore last coordinates of enemy
     sta     enemy_x,x
     lda     TEMP2
     sta     enemy_y,x
+    bne     move_enemy_cont7
     
+move_enemy_cont6:                   ;move boss back to the other
     ;if boss can check if player character under any of the sprites, no other obstacle should be presend
-    
+    lda     TEMPVAR2
+
     ;reverse move if character is unable to move
-    ;lda     TEMP11              ;note only one bit is set so testing for 1 in left or down
+    lda     TEMP11              ;note only one bit is set so testing for 1 in left or down
                                 ;causes move to be reversed with a shift right
                                 ; and when bits 6 or 4 are set will reverse with a shift left
-    ;and     #$a0
-    ;beq     move_enemy_cont3
-    ;lsr     TEMP11                ;reverses the move
-    ;bne     move_enemy_cont4 
+    and     #$a0
+    beq     move_enemy_cont3
+    lsr     TEMP11                ;reverses the move
+    bne     move_enemy_cont4 
     
 move_enemy_cont3:
-    ;asl     TEMP11
+    asl     TEMP11
 
 move_enemy_cont4:
-    ;lda    TEMP11
-    ;jsr    execute_move
+    lda    TEMP11
+    jsr    execute_move
     
     ;check if enemy attacks player
-    pla
+    
+move_enemy_cont7:
+    lda     TEMPVAR
     cmp     #60
     bcc     move_enemy_cont1
     
