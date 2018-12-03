@@ -114,13 +114,7 @@ spawn_boss_end:
 ;
 ; return x - enemy number
 
-moveEnemy:
-
-    lda     #0
-    sta     TEMPVAR3
-    sta     TEMPVAR2
-
-    
+moveEnemy:   
     lda     enemy_type,x        ;check if enemy active
     and     #$80
     beq     move_enemy_done               
@@ -145,12 +139,7 @@ move_enemy_cont:
     ;collision check
     ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
     ldx     TEMP_ENEMYNUM
-    ldy     enemy_y,x
-    sty     ENEMY_ATTACK_Y
-    lda     enemy_x,x
-    sta     ENEMY_ATTACK_X
-    tax
-    jsr     get_char
+    jsr     enemy_check_new_character
     cmp     #WALKABLE
     bcc     move_enemy_cont1        ;is walkable 
     pha
@@ -178,6 +167,22 @@ move_enemy_cont1:
     jsr     sound_step
     
 move_enemy_end:
+    rts
+
+;==================================================================
+; check_new_character
+;
+; x - the enemy index to check
+; returns a - the character underneath the enemies proposed move
+; 
+enemy_check_new_character:
+    ldy     enemy_y,x
+    sty     ENEMY_ATTACK_Y
+    lda     enemy_x,x
+    sta     ENEMY_ATTACK_X
+    tax
+    jsr     get_char
+    
     rts
     
 ;==================================================================
@@ -261,25 +266,26 @@ enemy_attack_end:
 moveBoss:
     
     lda     BOSS_ACTIVE  
-    beq     move_enemy_end
+    beq     move_boss_end
     ldx     #0
-    stx     TEMPVAR
     stx     TEMPVAR2
+    stx     TEMPVAR3
     ;jmp     move_enemy_check_clock      ;carry on with 
     
     lda     enemy_move_clock,x  ;check if clock expired
     beq     move_boss_begin
     rts
-    
+
+move_boss_begin:   
     ldx     #3
     stx     TEMP_ENEMYNUM
     
-move_boss_begin:    
+move_boss_loop:    
     ;clears the area underneath the boss
     ldx     TEMP_ENEMYNUM
     jsr     enemy_begin_move
     dec     TEMP_ENEMYNUM
-    bpl     move_boss_begin
+    bpl     move_boss_loop
     
     ;pick where enemy moves
     jsr     dir_to_player
@@ -287,44 +293,44 @@ move_boss_begin:
     sta     TEMP11
     
     ldx     #3
+    stx     TEMP_ENEMYNUM
 move_boss_loop2:
+    ldx     TEMP_ENEMYNUM
     lda     TEMP11
     jsr     execute_move
     
+    ;check if player under
+    jsr     enemy_check_new_character
+    cmp     #WALKABLE
+    bcc     move_boss_cont2
+    
+    cmp     #60                 ;player character number
+    bcc     move_boss_cont4
+    inc     TEMPVAR2            ;temp var 2 is a flag to determine if boss attacks player
+
+move_boss_cont4:
+    cmp     #44                 ;check if tile is a boss tile and ignore collision if true
+    bcs     move_boss_cont2
+    inc     TEMPVAR3            ;TEMPVAR3 is set when boss cannot move to this location
+    
     ;figure out if off screen or char underneath
+
 move_boss_cont2:
-    dex
+    dec     TEMP_ENEMYNUM
     bpl     move_boss_loop2
     
     
 move_boss_cont:
-    ldx     #0
     
-    ;TODO check collision that returns a status code - 0 no collision 1, collision with player,
-    ;collision with border or element
+    lda     TEMPVAR3            ;do nothing if tiles are unobstructed
+    beq     move_boss_cont1
     
-    ;collision check
-    ;check what is under the enemy if > 16 then reload previous values in temp3 and temp2
-    ldy     enemy_y,x
-    lda     enemy_x,x
-    tax
-    jsr     get_char
-    cmp     #WALKABLE
-    bcc     move_boss_cont1
-    
-    ;if player then attack
-    cmp     #60
-    bcc     move_boss_cont3
-    ;do attack code
+    ;keep boss in same position
     
     
-move_boss_cont3:
-    ;TODO: restore previous position properly by moving boss back from where he came from 
-    ldx     TEMP_ENEMYNUM
-    lda     TEMP3        ;restore last coordinates of enemy
-    sta     enemy_x,x
-    lda     TEMP2
-    sta     enemy_y,x
+    lda     TEMPVAR2            ;check if boss attacks enemy
+    beq     move_boss_cont1
+    jsr     enemy_attack
     
 
     ;draw all 4 tiles of enemy to the board
