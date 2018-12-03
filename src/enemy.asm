@@ -36,13 +36,30 @@ spawn_enemy_update:
     sta     enemy_charunder,x
     
     ;TODO; base health/strength and speed on some number 
-    lda     enemy_type,x
-    and     #38             ;isolate bits 4,5,6
+    lda     enemy_type,x    ;get offset
+    and     #$7f
+    tay
+    lda     char_color,y
+    pha
+    and     #$38             ;isolate bits 3, 4, 5
     lsr                     ; the result is health * 4
     clc
     adc     BASE_HEALTH
     sta     enemy_health,x
+    pla 
+    and     #$c0            ;speed = 40 - level *2 - difficulty *2
+    rol                     ;carry should still be cleared prior
+    rol 
+    rol
+    rol
+    sta     TEMP10
+    lda     LEVEL
+    asl 
+    adc     TEMP10
+    sta     TEMP10
     lda     #40
+    sec
+    sbc     TEMP10    
     sta     enemy_speed,x
     sta     enemy_move_clock,x
 
@@ -228,12 +245,16 @@ enemy_attack_hit:
     
     ;calculate the amount of damage and update player health
     lda     enemy_type,x
+    and     #$7f
+    tay
+    lda     char_color,y
     and     #$c0        ;clear all other bits
     clc
     rol
     rol                 ;bit 7 is now in bit 1, bit 6 is in 0
     rol
     adc     LEVEL
+    ;lsr                 ;/2 more fairness
     sta     TEMP10
     sec
     lda     PLAYERHEALTH
@@ -241,7 +262,6 @@ enemy_attack_hit:
     sta     PLAYERHEALTH
     bpl     enemy_attack_cont1
     inc     GAMEOVER
-    ;hit noise
     
 enemy_attack_cont1:
     jsr     sound_hit
@@ -269,11 +289,10 @@ moveBoss:
     lda     BOSS_ACTIVE  
     beq     enemy_attack_end        ;to keep branch within range
     ldx     #0
-    stx     TEMPVAR2
-    stx     TEMPVAR3
-    ;jmp     move_enemy_check_clock      ;carry on with 
+    stx     FLAG_BOSS_ATTACK
+    stx     FLAG_INVALID_MOVE
     
-    lda     enemy_move_clock,x  ;check if clock expired
+    lda     enemy_move_clock,x       ;check if clock expired
     beq     move_boss_begin
     rts
 
@@ -291,14 +310,26 @@ move_boss_loop:
     ;pick where enemy moves
     jsr     dir_to_player
     jsr     pick_move
-    sta     TEMP11
+    sta     TEMP_MOVE
     
     ldx     #3
     stx     TEMP_ENEMYNUM
 move_boss_loop2:
     ldx     TEMP_ENEMYNUM
-    lda     TEMP11
+    lda     TEMP_MOVE
     jsr     execute_move
+    
+    ;check if offscreen
+    ldy     enemy_x,x
+    ;cpy     #SCREENLEFT-1      ;removed this equates to 0 in current configuration
+    beq     move_boss_illegal_move
+    cpy     #SCREENRIGHT+1
+    beq     move_boss_illegal_move
+    ldy     enemy_y,x
+    ;cpy     #SCREENTOP-1        ;removed this equates to 0 in current config
+    beq     move_boss_illegal_move
+    cpy     SCREENBOTTOM+1
+    beq     move_boss_illegal_move
     
     ;check if player under
     jsr     enemy_check_new_character
@@ -307,60 +338,56 @@ move_boss_loop2:
     
     cmp     #60                 ;player character number
     bcc     move_boss_cont4
-    inc     TEMPVAR2            ;temp var 2 is a flag to determine if boss attacks player
-    inc     TEMPVAR3
+    ;set player X and Y
+    ;do the attack right now
+    inc     FLAG_INVALID_MOVE
+    jsr     enemy_attack
+    
+    ;inc     FLAG_BOSS_ATTACK            ;temp var 2 is a flag to determine if boss attacks player
+
+    bne     move_boss_cont2
     
 move_boss_cont4:
     cmp     #44                 ;check if tile is a boss tile and ignore collision if true
     bcs     move_boss_cont2
-    inc     TEMPVAR3            ;TEMPVAR3 is set when boss cannot move to this location
+move_boss_illegal_move:
+    inc     FLAG_INVALID_MOVE            ;FLAG_INVALID_MOVE is set when boss cannot move to this location
     
-    ;figure out if off screen or char underneath
+
 
 move_boss_cont2:
     dec     TEMP_ENEMYNUM
     bpl     move_boss_loop2
     
-    
 move_boss_cont:
-    
-    lda     TEMPVAR3            ;do nothing if tiles are unobstructed
+    lda     FLAG_INVALID_MOVE            ;do nothing if tiles are unobstructed
     beq     move_boss_cont1
     
     ;keep boss in same position
-;;;;;;;;;;;;;;;;;;
- ;reverse move if character is unable to move
-    lda     TEMP11              ;note only one bit is set so testing for 1 in left or down
+    ;reverse move if character is unable to move
+    lda     TEMP_MOVE             ;note only one bit is set so testing for 1 in left or down
                                 ;causes move to be reversed with a shift right
                                 ; and when bits 6 or 4 are set will reverse with a shift left
     and     #$a0
     beq     move_boss_cont3
-    lsr     TEMP11                ;reverses the move
+    lsr     TEMP_MOVE                ;reverses the move
     bne     move_boss_cont5       ; uncond branch
     
 move_boss_cont3:
-    asl     TEMP11
+    asl     TEMP_MOVE
     
 move_boss_cont5:
-    ldx     #3                  ;move the boss into position, could send back to loop 2 for space
+    ldx     #3 
     stx     TEMP_ENEMYNUM
 move_boss_loop3:
     ldx     TEMP_ENEMYNUM
-    lda     TEMP11
+    lda     TEMP_MOVE
     jsr     execute_move
     
     dec     TEMP_ENEMYNUM
     bpl     move_boss_loop3
-    
-    
-    
-;;;;;;;;;;;;;;;    
-    lda     TEMPVAR2            ;check if boss attacks enemy
-    beq     move_boss_cont1
-    jsr     enemy_attack
-    
 
-    ;draw all 4 tiles of enemy to the board
+;draw all 4 tiles of enemy to the board
 move_boss_cont1:
     ldx     #3
     stx     TEMP_ENEMYNUM
@@ -489,10 +516,13 @@ dir_to_player_end:
 ;
 ; returns a - direction to move
 pick_move:
-    pha     ;push direction to stack
-    lda     #$30 ; check bits 4 and 5
-    beq     pick_move_end
-    
+    pha
+    and     #$30 ; check bits 4 and 5 if this is 0 only l/r applies
+    bne     pick_move_choice
+    pla
+    rts
+
+pick_move_choice:    
     jsr     prand            ;randomly choose one direction to move
     bit     RANDSEED
     pla
@@ -533,24 +563,7 @@ execute_move_up:
 
 execute_move_end:
     rts
-
-
-;==================================================================
-; enemy_begin_move (removed when boss combined with enemy move)
-;
-; x - enemy to move
-;
-;enemy_begin_move:
-    ;lda     enemy_speed,x        ;reset movement points
-    ;sta     enemy_move_clock,x
-    
-    ;replace background tile under char
-    ;lda     enemy_charunder,x
-    ;jsr     enemy_draw_tile
-    
-    ;rts
-   
-   
+     
 ;==================================================================
 ; activate_attack (removed when boss combined with enemy move)
 ;

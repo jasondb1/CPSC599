@@ -46,27 +46,26 @@ timer_end:
 playMusic:
 
     lda     MUSIC_INTERVAL
-    cmp     #4
+    cmp     #20
     bmi     playMusic_body
     lda     #0                      ;Reset the interval
     sta     MUSIC_INTERVAL
 
 playMusic_body:
-    lda     MUSIC_INTERVAL
+    ;lda     MUSIC_INTERVAL ;not needed
     cmp     #2
     bpl     playMusic_B
 
 playMusic_A:
     jsr     playBass
     jsr     playNote
-
-    jmp     playMusic_end
-
+    rts
+    
 playMusic_B:
     lda     #0
     sta     CURRENTNOTE
     sta     VOICE2
-    sta     V2DURATION
+    ;sta     V2DURATION     ;not needed
 
     jsr     playBass
 
@@ -94,7 +93,8 @@ playNote:
     
 playNote_continue:    
     sta     VOICE2
-    lda     duration,y
+    ;lda     duration,y ;removed all 8th notes
+    lda     #8
     sta     V2DURATION
     inc     CURRENTNOTE; this is the note index
     rts
@@ -321,7 +321,6 @@ display_text_end:
 wait_for_user_input:
     jsr     timer
     jsr     playMusic   ;if music is wanted for intro
-    ;jsr     playBass 
     jsr     playSound
     lda     #$20       ;test fire button
     bit     JOY1_REGA

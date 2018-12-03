@@ -29,7 +29,7 @@ update_status_health_red:
 update_status_health_cont:
     sta     COLORMAPSTATUS+35,y
     iny
-    cpy     #8   
+    cpy     #10
     bne     update_status_health_loop
 
     ;display level
@@ -147,22 +147,6 @@ drawScreen_loop
 drawBoard:
 
     jsr     inactivate_all_enemies
-   ;load map data
-   ;TODO: could increment/decrement MAP_PTR in player when map moves
-    ;lda     #<map_data
-    ;sta     MAP_PTR_L
-    ;lda     #>map_data
-    ;sta     MAP_PTR_H
-    ;ldx     MAPX
-    ;ldy     MAPY
-    ;jsr     position_to_offset
-
-    ;deal with high bit (add high bit offset to h)
-    ;clc
-    ;txa
-    ;adc     MAP_PTR_H
-    ;sta     MAP_PTR_H
-    ;lda     (MAP_PTR_L),y  
     jsr     get_map_tile
     
     sta     TEMP10      ;this holds map_data also used at end of subroutine
@@ -614,7 +598,13 @@ animateAttack_end:
 new_level:
 
     jsr    clear_map_tiles
-    inc     LEVEL
+    inc    LEVEL
+    
+    lda    LEVEL            ;BASE_HEALTH = 3 * level
+    asl     
+    clc
+    adc     LEVEL   
+    sta     BASE_HEALTH 
      ;empty map tile for 
     lda     #3
     sta     TEMP10 
@@ -638,16 +628,20 @@ new_level_loop:
     ;set player starting position, stored in MAPX and MAPY
     jsr     find_empty_map_tile
     
-new_level_new_color
+new_level_new_color:
     jsr     prand
     and     #$07
     beq     new_level_new_color
-    sta     char_color+1
+    sta     char_color+1            ;base tile
     
     ;toggle between castle and forest
     lda     #23
     adc     #0
-    sta     CHAR_BORDER
+    ;sta     CHAR_BORDER             ;border color
+    ;sta     char_color+44   
+    ;sta     char_color+45  
+    ;sta     char_color+46  
+    ;sta     char_color+47    
 
     rts
 

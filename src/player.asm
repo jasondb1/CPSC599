@@ -31,8 +31,9 @@ move_player_left:
     sty     PLAYERDIR
 
     ;check if player off screen, change map and reset player column
-    ldy     #SCREENLEFT-1
-    cpy     PLAYERX
+    ;ldy     #SCREENLEFT-1      ;removed this equates to 0 in current config
+    ;cpy     PLAYERX
+    ldy     PLAYERX
     bne     move_player_right
     dec     MAPX
     ldy     #SCREENRIGHT
@@ -87,8 +88,9 @@ move_player_up:
     sty 	PLAYERDIR
     
     ;check if player off screen, change map and reset player row
-    ldy     #SCREENTOP-1
-    cpy     PLAYERY
+    ldy     PLAYERY
+    ;ldy     #SCREENTOP-1        ;removed this equates to 0 in current config
+    ;cpy     PLAYERY
     bne     move_player_cont
     dec     MAPY
     ldy     #SCREENBOTTOM
@@ -201,15 +203,19 @@ check_items_item7:
     jsr     replace_base_char
     inc     PLAYERHEALTH        ;TODO: maybe increase health by 2?
     inc     PLAYERHEALTH
-    lda     MAX_HEALTH
+    lda     #MAX_HEALTH
     cmp     PLAYERHEALTH
-    bcc     check_items_end
+    bcs     check_items_sound
     sta     PLAYERHEALTH
+    bne     check_items_sound
     
 check_items_end:
     cmp     #8
     bcc     check_items_end1
+    cmp     #15
+    beq     check_items_end1
     
+check_items_sound:
     lda     #$f8        ;pickup item noise
     sta     VOICE3
     lda     #$05

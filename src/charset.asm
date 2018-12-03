@@ -8,7 +8,7 @@ char_set:
 	
 	; 2 through 7 can be randomly generated
 	hex	00 00 42 18 18 38 6c b4 ;2 - rock
-	hex	3e 6b 7f 6f 36 0c 14 3a ;3 - tree? maybe not necessary with tree border
+	hex	3e 6b 7f 6f 36 0c 14 3a ;3 - tree
 	hex	00 00 00 00 00 00 54 38 ;4 - grass
 	hex 02 52 d6 74 3c 1a 18 18 ;5 - stump
 	hex 00 7e 7e 7e 7e 18 18 18 ;6 - sign
@@ -19,7 +19,6 @@ char_set:
 	;the following are items or non generic tiles
 	hex 18 24 24 18 08 38 08 38 ;8 - key
     hex 00 52 29 52 29 ff ff 42 ;9 - bbq
-	;hex 00 18 3c 7e 7e 7e 7e 7e ;10 - door
 	hex 00 ff 99 bd bd b5 bd bd ;10 - door
 	hex 00 18 3c 7e 7e 7e 7e 7e ;11 - dungeon door
 	hex aa 55 aa 55 aa 55 aa 55 ;12 - bridge / tile
@@ -27,7 +26,7 @@ char_set:
 	hex 00 3c 7e 7a 7a 66 3c 00 ;14 - coin
 	hex 09 a2 2c 7c 5e 76 3c 84 ;15 - splat
 	hex aa 55 aa 55 aa 55 aa 55 ;16 - path?
-	hex aa 55 aa 55 aa 55 aa 55 ;17 - 
+	hex 08 18 18 18 18 18 3c 10 ;17 - sword
 	hex aa 55 aa 55 aa 55 aa 55 ;18
 	hex aa 55 aa 55 aa 55 aa 55 ;19
 	hex aa 55 aa 55 aa 55 aa 55 ;20

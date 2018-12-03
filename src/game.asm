@@ -94,7 +94,7 @@ RIGHT               equ #$40
 LEFT                equ #$80
 
 MAX_MAP_ROWS        equ #10     ;set this to the number of rows in map_data
-MAX_HEALTH          equ #16     ;set this to game variable later if health upgrades are availabled
+MAX_HEALTH          equ #20     ;set this to game variable later if health upgrades are availabled
 
 MAX_LEVELS          equ #5      ;3-7 are good values - this might be a user config option later
 
@@ -147,6 +147,14 @@ ATTACK_ACTIVE           equ $8f
 
 ;===================================================================
 ; User Defined Memory locations
+
+;$14-15 integer area
+TEMP_MOVE           equ $14
+;SPAWN_X             equ $15
+
+;$69 -$70 current variable name
+TEMP_VAR            equ $69
+;SPAWN_Y             equ $70
 
 ;$26-2A product area for multiplication
 TEMP10              equ $26
@@ -243,12 +251,13 @@ ENEMY_KILLED_H          equ ENEMY_KILLED_L + 1
 SPAWN_X                 equ ENEMY_KILLED_H + 1
 SPAWN_Y                 equ ENEMY_KILLED_H + 2
 TEMPVAR			        equ ENEMY_KILLED_H + 3
-TEMPVAR2		        equ ENEMY_KILLED_H + 4
-TEMPVAR3		        equ ENEMY_KILLED_H + 5
+FLAG_BOSS_ATTACK		equ ENEMY_KILLED_H + 4
+FLAG_INVALID_MOVE		equ ENEMY_KILLED_H + 5
 CHAR_BASE               equ ENEMY_KILLED_H + 6
+;TEMP_MOVE               equ ENEMY_KILLED_H + 7
 
 ;used for boss spawning
-BOSS_ACTIVE             equ ENEMY_KILLED_H + 7
+BOSS_ACTIVE             equ ENEMY_KILLED_H + 8
 BOSS_UL_X               equ BOSS_ACTIVE + 1
 BOSS_UR_X               equ BOSS_ACTIVE + 2
 BOSS_LL_X               equ BOSS_ACTIVE + 3
@@ -259,6 +268,7 @@ BOSS_LL_Y               equ BOSS_ACTIVE + 7
 BOSS_LR_Y               equ BOSS_ACTIVE + 8
 BOSS_CHAR               equ BOSS_ACTIVE + 10
 DIRECTION_TO_PLAYER     equ BOSS_ACTIVE + 11
+FLAG_OFFSCREEN          equ BOSS_ACTIVE + 12
 
 ;Less used player variables
 HIGHEST_LEVEL           equ $03ec
@@ -332,7 +342,7 @@ init_loop2:
     sta     MAPX
     sta     MAPY
     
-    lda     #8
+    lda     #7
     sta     PLAYERWEAPONDAMAGE
     
     ;reset delay
@@ -465,7 +475,7 @@ died_text:
 
 
 ;map data - holds exit and other information
-;note maps are 22 screens wide and up to 256 tall
+;note: maps are 22 screens wide and n tall
 ;
 ;
 ;
@@ -513,12 +523,9 @@ died_text:
 
 ;starts at top left of map, can partition into other areas, just adjust map position
 ; must be 22 wide for offset calculation to work (currently uses the screen dimensions for offset)
-; forest: 1,1 thru 13,8
-; castle: 1,9 thru 13,16
 
-;TODO:This could be procedurally generated if space/time permits
 ; if you alter the rows set the constan MAX_MAP_ROWS to be the same
-map_data: ;              <<<  forest (area 1)    |  dungeon  area (3)>>
+map_data:
 ;          1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22
     hex    D4 90 10 10 10 10 10 10 10 10 10 10 50 90 10 10 10 10 10 15 10 50;1
     hex    Cf 88 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;2
@@ -528,7 +535,6 @@ map_data: ;              <<<  forest (area 1)    |  dungeon  area (3)>>
     hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;6
     hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;7
     hex    a0 20 20 00 20 20 20 20 20 20 20 20 60 80 00 00 00 00 00 00 00 40;8
-; ----------forest ^^^  castle (area 2) vvv   
     hex    90 10 10 00 10 10 10 10 10 10 10 10 50 80 00 00 00 00 00 00 00 40;9
     ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;10
     ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;11
@@ -560,8 +566,8 @@ char_color  hex 00 05 01 03 03 07 03 04 ;0-7
             
             ;for enemies bits  6 and 7 (high) are for enemy difficulty calcluated as level + diffficulty so player health when hit is health-= level + 1 + difficulty
             ;bits 3,4,5 are for health and is calculated as base + 4 * health
-            hex 02 01 02 06 33 33 33 33 ;40-47
-            hex 01 41 49 81 81 c1 c1 c1 ;48-55
+            hex 02 01 02 06 fb fb fb fb ;40-47
+            hex 01 4c 5e 57 8b 92 d2 d4 ;48-55
             hex 01 01 01 01 07 07 07 07 ;56-63
             
 ;must go last because the address is after all of this code
