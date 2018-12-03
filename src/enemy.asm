@@ -249,6 +249,7 @@ enemy_attack_cont1:
     
 enemy_attack_cont:    
     ;put the attack miss or hit at the location of the character
+;TODO: need to figure this out for boss attack both here and enemy_check_new_character
     ldx     ENEMY_ATTACK_X
     ldy     ENEMY_ATTACK_Y
     jsr     put_char
@@ -266,7 +267,7 @@ enemy_attack_end:
 moveBoss:
     
     lda     BOSS_ACTIVE  
-    beq     move_boss_end
+    beq     enemy_attack_end        ;to keep branch within range
     ldx     #0
     stx     TEMPVAR2
     stx     TEMPVAR3
@@ -307,7 +308,8 @@ move_boss_loop2:
     cmp     #60                 ;player character number
     bcc     move_boss_cont4
     inc     TEMPVAR2            ;temp var 2 is a flag to determine if boss attacks player
-
+    inc     TEMPVAR3
+    
 move_boss_cont4:
     cmp     #44                 ;check if tile is a boss tile and ignore collision if true
     bcs     move_boss_cont2
@@ -326,8 +328,33 @@ move_boss_cont:
     beq     move_boss_cont1
     
     ;keep boss in same position
+;;;;;;;;;;;;;;;;;;
+ ;reverse move if character is unable to move
+    lda     TEMP11              ;note only one bit is set so testing for 1 in left or down
+                                ;causes move to be reversed with a shift right
+                                ; and when bits 6 or 4 are set will reverse with a shift left
+    and     #$a0
+    beq     move_boss_cont3
+    lsr     TEMP11                ;reverses the move
+    bne     move_boss_cont5       ; uncond branch
+    
+move_boss_cont3:
+    asl     TEMP11
+    
+move_boss_cont5:
+    ldx     #3                  ;move the boss into position, could send back to loop 2 for space
+    stx     TEMP_ENEMYNUM
+move_boss_loop3:
+    ldx     TEMP_ENEMYNUM
+    lda     TEMP11
+    jsr     execute_move
+    
+    dec     TEMP_ENEMYNUM
+    bpl     move_boss_loop3
     
     
+    
+;;;;;;;;;;;;;;;    
     lda     TEMPVAR2            ;check if boss attacks enemy
     beq     move_boss_cont1
     jsr     enemy_attack
