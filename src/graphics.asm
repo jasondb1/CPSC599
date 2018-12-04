@@ -586,6 +586,9 @@ animateAttack_enemy:
     ldy     PLAYERY
     jsr     put_char
     
+    lda     #8
+    sta     $900f
+    
     dec     ENEMY_ATTACK_ACTIVE    
 
 
@@ -637,11 +640,6 @@ new_level_new_color:
     ;toggle between castle and forest
     lda     #23
     adc     #0
-    ;sta     CHAR_BORDER             ;border color
-    ;sta     char_color+44   
-    ;sta     char_color+45  
-    ;sta     char_color+46  
-    ;sta     char_color+47    
 
     rts
 
@@ -672,6 +670,8 @@ find_empty_map_tile_loop1:
     sta     MAPY
 
     jsr     get_map_tile
+    cmp     #$f0
+    bcs     find_empty_map_tile
     and     #$0f
     bne     find_empty_map_tile
     
