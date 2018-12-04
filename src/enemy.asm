@@ -264,6 +264,9 @@ enemy_attack_hit:
     inc     GAMEOVER
     
 enemy_attack_cont1:
+    lda     #10
+    sta     $900f
+
     jsr     sound_hit
     lda     #CHAR_HIT
     
