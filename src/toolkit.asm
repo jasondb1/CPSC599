@@ -46,7 +46,7 @@ timer_end:
 playMusic:
 
     lda     MUSIC_INTERVAL
-    cmp     #20
+    cmp     #4
     bmi     playMusic_body
     lda     #0                      ;Reset the interval
     sta     MUSIC_INTERVAL
@@ -65,8 +65,8 @@ playMusic_B:
     lda     #0
     sta     CURRENTNOTE
     sta     VOICE2
-    ;sta     V2DURATION     ;not needed
-
+    sta     V2DURATION
+    
     jsr     playBass
 
 playMusic_end:
@@ -93,7 +93,6 @@ playNote:
     
 playNote_continue:    
     sta     VOICE2
-    ;lda     duration,y ;removed all 8th notes
     lda     #8
     sta     V2DURATION
     inc     CURRENTNOTE; this is the note index
