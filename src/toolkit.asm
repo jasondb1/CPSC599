@@ -44,32 +44,7 @@ timer_end:
 ;==================================================================
 ; playMusic - controls the playing of the music
 playMusic:
-
-    lda     MUSIC_INTERVAL
-    cmp     #4
-    bmi     playMusic_body
-    lda     #0                      ;Reset the interval
-    sta     MUSIC_INTERVAL
-
-playMusic_body:
-    ;lda     MUSIC_INTERVAL ;not needed
-    cmp     #2
-    bpl     playMusic_B
-
-playMusic_A:
-    jsr     playBass
     jsr     playNote
-    rts
-    
-playMusic_B:
-    lda     #0
-    sta     CURRENTNOTE
-    sta     VOICE2
-    sta     V2DURATION
-    
-    jsr     playBass
-
-playMusic_end:
     rts
 
 ;==================================================================
@@ -93,7 +68,7 @@ playNote:
     
 playNote_continue:    
     sta     VOICE2
-    lda     #8
+    lda     #12
     sta     V2DURATION
     inc     CURRENTNOTE; this is the note index
     rts
@@ -104,42 +79,6 @@ playNote_silence:   ;cuts off last jiffy, to provide separation of notes
 
 playNote_end:
     rts
-
-
-;==================================================================
-; playBass - play the bass line
-playBass:
-    ;if duration >1 (jiffy) then return otherwise if ==1 silence if ==0 nextnote
-    lda     #$01
-    cmp     V1DURATION
-    bmi     playBass_end
-    beq     playBass_silence
-    
-    ;new note
-    ldy     CURRENTNOTE_BASS
-    lda     bMelody,y
-    cmp     #$ff            ;ff is the terminator for the melody line
-    bne     playBass_continue
-    ldy     #$0
-    sty     CURRENTNOTE_BASS     ;reset note to first note in melody
-
-    inc     MUSIC_INTERVAL
-    lda     bMelody,y
-    
-playBass_continue:    
-    sta     VOICE1
-    lda     bDuration,y
-    sta     V1DURATION
-    inc     CURRENTNOTE_BASS; this is the note index
-    rts
-
-playBass_silence:   ;cuts off last jiffy, to provide separation of notes
-    ldy     #$0
-    sty     VOICE1
-
-playBass_end:
-    rts
-
 
 ;==================================================================
 ; playSound - play a currently running sound

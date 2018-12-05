@@ -43,7 +43,7 @@ intro_display_text:
 
 intro_loop:       
     ;animation timer
-    jsr     playMusic    ;if music is wanted for intro
+    jsr     playNote    ;if music is wanted for intro
     jsr     playSound
     jsr     timer
     lda     COUNTDOWN
@@ -56,16 +56,19 @@ intro_loop:
     
     ;move screen
     dec     SCR_VER
-    lda     #$19        ;standard screen position
+    lda     #72        ;standard screen position
+    ;cmp     SCR_VER       
     cmp     SCR_VER       
     bne     intro_loop
-    
+
 ;finished scroll
 
 intro_wait:
     jsr wait_for_user_input
         
 intro_end:
+    lda     #25
+    sta     SCR_VER
     rts
 
 

@@ -128,9 +128,9 @@ COLORMAP            equ $9600
 COLORMAPSTATUS      equ $97cd
 COLORREG            equ 646
 
-VOICE1              equ $900a
-VOICE2              equ $900b
-VOICE3              equ $900c
+VOICE2              equ $900a
+VOICE3              equ $900b
+VOICE1              equ $900c
 NOISE               equ $900d
 VOLUME              equ $900e ;first 4 bits
 
@@ -400,7 +400,7 @@ mainLoop_continue:
 
     jsr     timer       ;timer returns countdown, branch if not 0
 
-    jsr     playMusic
+    jsr     playNote
     jsr     playSound
     jsr     animateAttack
     
@@ -459,10 +459,10 @@ finished:
 ;title and ending text
 ;text limited to 255 chars long
 title_text:
-          dc.b    "WITCHER 0.3", $0d, $0d   
-          dc.b    "BBQ SIDE QUEST",$0d,$0d
+          dc.b    "     WITCHER 0.3", $0d, $0d   
+          dc.b    "      BBQ QUEST",$0d,$0d
 length_text:
-          dc.b    "FIRE TO START", $00
+          dc.b    "     PRESS START", $00
           
 ending_text:
           dc.b    "YOU WIN BUT YOUR", $0d
@@ -527,23 +527,17 @@ died_text:
 ; if you alter the rows set the constan MAX_MAP_ROWS to be the same
 map_data:
 ;          1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22
-    hex     D0 90 50 D0 F0 F0 F0 90 10 50 F0 F0 90 10 10 10 50 90 30 30 30 50
-    hex     C0 80 40 A0 30 30 30 00 20 20 30 30 40 80 60 80 60 C0 90 30 50 C0
-    hex     A0 60 80 10 10 10 10 00 10 10 50 90 60 A0 50 A0 50 C0 C0 D0 C0 C0
-    hex     90 50 A0 20 20 00 20 00 20 00 60 A0 50 90 60 90 60 C0 C0 C0 C0 C0
-    hex     80 00 30 30 70 A0 30 60 B0 60 D0 F0 C0 A0 50 A0 50 80 40 C0 C0 C0
-    hex     80 40 B0 30 50 90 30 30 10 70 80 30 40 90 60 90 60 C0 C0 C0 C0 C0
-    hex     80 60 D0 D0 C0 80 50 F0 80 F0 E0 90 40 A0 50 A0 50 C0 C0 C0 C0 C0
-    hex     C0 90 00 40 A0 00 60 B0 00 10 10 00 40 90 60 90 60 C0 A0 60 C0 C0
-    hex     A0 00 40 A0 30 00 30 30 60 A0 00 20 60 E0 F0 80 50 A0 30 30 60 C0
-    hex     F0 A0 20 30 70 A0 30 30 30 30 20 30 30 30 30 20 20 30 30 30 30 60
-    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;10
-    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;11
-    ;hex    80 00 00 00 04 08 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;12
-    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;13
-    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;14
-    ;hex    80 00 00 00 00 00 00 00 00 00 00 00 40 80 00 00 00 00 00 00 00 40;15
-
+    hex    D0 90 50 DF F0 F0 F0 90 10 50 F0 F0 90 10 10 10 50 90 30 30 30 50
+    hex    C0 80 40 A0 30 30 30 00 20 20 30 30 40 80 60 80 60 C0 90 30 50 C0
+    hex    A0 60 80 10 10 10 10 00 10 10 50 90 60 A0 50 A0 50 C0 C0 DF C0 C0
+    hex    90 50 A0 20 20 00 20 00 20 00 60 A0 50 90 60 90 60 C0 C0 C0 C0 C0
+    hex    80 00 30 30 79 A0 30 60 B0 60 D0 F0 C0 A0 50 A0 50 80 40 C0 C0 C0
+    hex    80 40 B0 30 50 90 30 30 10 70 88 30 40 90 60 90 60 C0 C0 C0 C0 C0
+    hex    80 60 D0 D0 C0 80 50 F0 80 F0 E0 90 40 A0 50 A0 50 C0 C0 C0 C0 C0
+    hex    C0 90 00 40 A0 00 60 B0 00 10 10 00 40 90 60 90 60 C0 A0 60 C0 C0
+    hex    A0 00 40 A0 30 00 30 30 60 A0 00 20 60 EF F0 80 50 A0 30 30 60 C0
+    hex    F0 A0 20 30 70 A0 30 30 30 30 20 30 30 30 30 20 20 30 30 30 30 60
+  
 ;==================================================================
 ;Colors
 ;BLACK           equ #0
@@ -558,7 +552,7 @@ map_data:
 ;if space is required move this to cassette buffer or keyboard buffer and/or compact to 4 bit colors
 ;lowest 3 bits are color info
 
-char_color  hex 00 05 01 03 03 07 03 04 ;0-7
+char_color  hex 00 05 03 03 03 07 03 04 ;0-7
             hex 07 02 01 01 05 05 07 02 ;8-15
             hex 00 05 05 05 05 02 02 05 ;16-23
             hex 01 01 06 04 01 05 01 01 ;24-31
@@ -568,7 +562,7 @@ char_color  hex 00 05 01 03 03 07 03 04 ;0-7
             ;bits 3,4,5 are for health and is calculated as base + 4 * health
             hex 02 01 02 06 fb fb fb fb ;40-47
             hex 01 4c 5e 57 8b 92 d2 d4 ;48-55
-            hex 01 01 01 01 07 07 07 07 ;56-63
+            hex 01 01 01 01 01 01 01 01 ;56-63
             
 ;must go last because the address is after all of this code
     include     "charset.asm"
