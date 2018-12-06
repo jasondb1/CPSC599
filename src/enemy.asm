@@ -2,11 +2,9 @@
 ; spawnEnemy - spawns enemies on each screen
 ; 
 ; x is enemy number
-;
 ; return x - enemy number
-
+;
 spawnEnemy:
-
     stx     TEMP_ENEMYNUM
     jsr     prand
     cmp     #SPAWN_CHANCE 
@@ -35,14 +33,13 @@ spawn_enemy_update:
     pla
     sta     enemy_charunder,x
     
-    ;TODO; base health/strength and speed on some number 
     lda     enemy_type,x    ;get offset
     and     #$7f
     tay
     lda     char_color,y
     pha
-    and     #$38             ;isolate bits 3, 4, 5
-    lsr                     ; the result is health * 4
+    and     #$38            ;isolate bits 3, 4, 5
+    lsr                     ;the result is health * 4
     clc
     adc     BASE_HEALTH
     sta     enemy_health,x
@@ -69,9 +66,8 @@ spawnEnemy_end:
  
 ;==================================================================
 ; spawn_boss - spawns a boss
-
+;
 spawn_boss:
-
     inc     BOSS_ACTIVE
     
     ldx     #0
@@ -91,7 +87,7 @@ spawn_boss:
     sty     BOSS_UR_X
     sty     BOSS_LR_X
     
-    lda     #44     ;character of boss
+    lda     #44             ;sprite of boss
     ora     #$80
     sta     BOSS_CHAR    
     
@@ -130,7 +126,7 @@ spawn_boss_end:
 ; x is offset of enemy 
 ;
 ; return x - enemy number
-
+;
 moveEnemy:   
     lda     enemy_type,x        ;check if enemy active
     and     #$80
@@ -205,9 +201,8 @@ enemy_check_new_character:
 ;==================================================================
 ; enemy_begin_move 
 ;
-;
 enemy_begin_move:
-   ;reset movement points
+    ;reset movement points
     lda     enemy_speed,x 
     sta     enemy_move_clock,x
     
@@ -228,21 +223,20 @@ enemy_attack:
     lda     ENEMY_ATTACK_ACTIVE
     bne     enemy_attack_end
     inc     ENEMY_ATTACK_ACTIVE
-    lda     #10                     ;could move this to a constant
+    lda     #10                     
     sta     ENEMY_ATTACKDURATION
     jsr     prand
     cmp     #CHANCE_TO_HIT
     bcc     enemy_attack_hit
     
 enemy_attack_miss:
-    ;code for miss   
+    ;code for miss
     jsr     sound_miss
     
     lda     #CHAR_MISS
     bne     enemy_attack_cont
     
 enemy_attack_hit:
-    
     ;calculate the amount of damage and update player health
     lda     enemy_type,x
     and     #$7f
@@ -254,7 +248,6 @@ enemy_attack_hit:
     rol                 ;bit 7 is now in bit 1, bit 6 is in 0
     rol
     adc     LEVEL
-    ;lsr                 ;/2 more fairness
     sta     TEMP10
     sec
     lda     PLAYERHEALTH
@@ -272,7 +265,6 @@ enemy_attack_cont1:
     
 enemy_attack_cont:    
     ;put the attack miss or hit at the location of the character
-;TODO: need to figure this out for boss attack both here and enemy_check_new_character
     ldx     ENEMY_ATTACK_X
     ldy     ENEMY_ATTACK_Y
     jsr     put_char
@@ -286,9 +278,7 @@ enemy_attack_end:
 ;
 ; stub that jumps to enemy move/attack routines if boss is active
 ;
-
 moveBoss:
-    
     lda     BOSS_ACTIVE  
     beq     enemy_attack_end        ;to keep branch within range
     ldx     #0
@@ -346,8 +336,6 @@ move_boss_loop2:
     inc     FLAG_INVALID_MOVE
     jsr     enemy_attack
     
-    ;inc     FLAG_BOSS_ATTACK            ;temp var 2 is a flag to determine if boss attacks player
-
     bne     move_boss_cont2
     
 move_boss_cont4:
@@ -356,8 +344,6 @@ move_boss_cont4:
 move_boss_illegal_move:
     inc     FLAG_INVALID_MOVE            ;FLAG_INVALID_MOVE is set when boss cannot move to this location
     
-
-
 move_boss_cont2:
     dec     TEMP_ENEMYNUM
     bpl     move_boss_loop2
@@ -369,8 +355,8 @@ move_boss_cont:
     ;keep boss in same position
     ;reverse move if character is unable to move
     lda     TEMP_MOVE             ;note only one bit is set so testing for 1 in left or down
-                                ;causes move to be reversed with a shift right
-                                ; and when bits 6 or 4 are set will reverse with a shift left
+                                  ;causes move to be reversed with a shift right
+                                  ;and when bits 6 or 4 are set will reverse with a shift left
     and     #$a0
     beq     move_boss_cont3
     lsr     TEMP_MOVE                ;reverses the move
@@ -408,7 +394,6 @@ move_boss_loop1:
 move_boss_end:
     rts
     
-
     
 ;==================================================================
 ; enemy_draw_tile - draws a character tile at location of enemy x
@@ -417,13 +402,12 @@ move_boss_end:
 ; x is enemy number
 ;
 ; return x - enemy number
-
+;
 enemy_draw_tile:
-
     pha
     ldy     enemy_y,x
     lda     enemy_x,x
-    sty     TEMP2       ;store previous values in case of collision restore in TEMP2 nd TEMP3
+    sty     TEMP2               ;store previous values in case of collision restore in TEMP2 nd TEMP3
     sta     TEMP3
     tax
     pla
@@ -440,7 +424,7 @@ enemy_draw_tile:
 ; x is col
 ;
 ; return x - enemy number returns $ff if not found 
-
+;
 enemy_at:
     stx     TEMP1
     
@@ -463,9 +447,7 @@ enemy_at_end:
 ;==================================================================
 ; inactivate all_enemies
 ;
-    
 inactivate_all_enemies:
-
     lda     #00                     
     sta     BOSS_ACTIVE             ;reset boss to not active
     sta     ATTACK_ACTIVE
@@ -484,7 +466,7 @@ inactivate_all_enemies_loop:
 ; x - enemy number
 ;
 ; returns a - direction to move
-
+;
 dir_to_player:    
     lda     #0
     
@@ -567,22 +549,9 @@ execute_move_up:
 execute_move_end:
     rts
      
-;==================================================================
-; activate_attack (removed when boss combined with enemy move)
-;
-;   common code for attack activation
-;
 
-;enemy_activate_attack:
-    ;inc     ENEMY_ATTACK_ACTIVE
-    ;lda     #2                  ;could move this to a constant
-    ;sta     ENEMY_ATTACKDURATION
-    ;rts
-    
-    
 ;==================================================================
-; erase_enemies - erases all enemies on screen
-;                 and replace with splat
+; erase_enemies - erases all enemies on screen and replace with splat
 ;
 erase_boss:
     ldx     #3
@@ -600,7 +569,6 @@ erase_boss_loop:
 ;==================================================================
 ; boss_killed - kills the boss
 ; 
-;
 boss_killed:
     jsr     inactivate_all_enemies
     jsr     erase_boss

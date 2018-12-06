@@ -2,20 +2,18 @@
 ; 
 ; game.asm
 ;
-; Authors: Jason De Boer - 30034428
-;           Phil Borowoy - 
-;           Alec
-;           John
+; Authors: Jason De Boer
+;           Phil Borowoy 
+;           Alec McAllister
+;           John Wilson
 ;
 ;  Class: CPSC599.82
-;
 ;
 ; compile:
 ;   dasm game.asm -ogame.prg -v3 
 ;
 ; run on (vice) xvic emulator
 ;   xvic game.prg
-
 
     Processor 6502
     
@@ -96,9 +94,6 @@ LEFT                equ #$80
 MAX_MAP_ROWS        equ #10     ;set this to the number of rows in map_data
 MAX_HEALTH          equ #20     ;set this to game variable later if health upgrades are availabled
 
-MAX_LEVELS          equ #5      ;3-7 are good values - this might be a user config option later
-
-
 ;==================================================================
 ;Colors
 BLACK               equ #0
@@ -150,11 +145,9 @@ ATTACK_ACTIVE           equ $8f
 
 ;$14-15 integer area
 TEMP_MOVE           equ $14
-;SPAWN_X             equ $15
 
 ;$69 -$70 current variable name
 TEMP_VAR            equ $69
-;SPAWN_Y             equ $70
 
 ;$26-2A product area for multiplication
 TEMP10              equ $26
@@ -181,7 +174,6 @@ TEMP_ENEMYNUM       equ $53
 
 ;possible to use for (basic fp and numeric area $57 - $70
 ;$57-$66 -  float point  area
-
 MAPX                equ $57
 MAPY                equ $58
 
@@ -228,8 +220,7 @@ PREVJIFFY           equ $FD
 COUNTDOWN           equ $FE
 
 ;88 bytes should be usable for some stuff once program running
-;0200-0258        512-600       88 bytes BASIC input buffer--where the charac-
-;                                   ters being INPUT will go.
+;0200-0258        512-600       88 bytes BASIC input buffer--where the characters being INPUT will go.
 BASIC_BUFFER_AREA   equ $0200
 ;not currently used
 
@@ -254,7 +245,6 @@ TEMPVAR			        equ ENEMY_KILLED_H + 3
 FLAG_BOSS_ATTACK		equ ENEMY_KILLED_H + 4
 FLAG_INVALID_MOVE		equ ENEMY_KILLED_H + 5
 CHAR_BASE               equ ENEMY_KILLED_H + 6
-;TEMP_MOVE               equ ENEMY_KILLED_H + 7
 
 ;used for boss spawning
 BOSS_ACTIVE             equ ENEMY_KILLED_H + 8
@@ -271,7 +261,6 @@ DIRECTION_TO_PLAYER     equ BOSS_ACTIVE + 11
 FLAG_OFFSCREEN          equ BOSS_ACTIVE + 12
 
 ;Less used player variables
-HIGHEST_LEVEL           equ $03ec
 MUSIC_INTERVAL          equ $03ed
 PLAYER_SPRITE_CURRENT   equ $03ee
 SWORD_SPRITE_CURRENT    equ $03ef
@@ -311,7 +300,7 @@ init:
     
     ;The intro needs to be here before initializing variables otherwise
     ;some of the variables used with basic routines could get overwritten
-    jsr     intro ; disable for testing  
+    jsr     intro
     
     ;0 initial values in cassette buffer
     lda     #$00
@@ -346,7 +335,7 @@ init_loop2:
     sta     PLAYERWEAPONDAMAGE
     
     ;reset delay
-    lda     #10
+    lda     #6
     
     ;initial player 
     sta     PLAYERSPEED
@@ -354,9 +343,6 @@ init_loop2:
     
     lda     #MAX_HEALTH
     sta     PLAYERHEALTH
-    
-    lda     #MAX_LEVELS
-    sta     HIGHEST_LEVEL
     
     ;set border character for first level
     lda     #23
@@ -371,10 +357,6 @@ init_loop2:
     lda     #>COLORMAP
     sta     COLORMAP_H
 
-;==================================================================
-; 
-;
-
     ;set custom character set
     lda     #$ff
     sta     CHARSETSELECT
@@ -387,7 +369,6 @@ init_loop2:
     stx     PLAYERX
     sta     CHARUNDERPLAYER
 
-    ;jsr     wait_for_user_input
 
 ;==================================================================
 ; mainLoop
@@ -395,11 +376,9 @@ init_loop2:
 
 mainLoop:
 mainLoop_continue:
-        
-    ;these events constantly running
+    ;these events are constantly running
 
-    jsr     timer       ;timer returns countdown, branch if not 0
-
+    jsr     timer
     jsr     playNote
     jsr     playSound
     jsr     animateAttack
@@ -526,7 +505,7 @@ died_text:
 ; if you alter the rows set the constan MAX_MAP_ROWS to be the same
 ; Map data for testing
 ;map_data:
-;       1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22
+; ;      1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22
 ;    hex D0  98  58  D8  F0  F0  F0  90  10  50  F0  F0  90  10  10  10  50  90  30  30  30  50
 ;    hex C0  8F  4F  AF  30  30  30  00  20  20  30  30  40  80  60  80  60  C0  90  30  50  C0
 ;    hex AF  68  80  10  10  10  10  00  10  10  50  90  60  A0  50  A0  50  C0  C0  D8  C0  C0
@@ -565,7 +544,7 @@ map_data:
 ;lowest 3 bits are color info
 
 char_color  hex 00 05 03 03 03 07 03 04 ;0-7
-            hex 07 02 01 02 05 05 07 02 ;8-15
+            hex 07 03 01 02 05 05 07 02 ;8-15
             hex 00 05 05 05 05 02 02 05 ;16-23
             hex 01 01 06 04 01 05 01 01 ;24-31
             hex 01 01 01 01 01 01 01 01 ;32-39;

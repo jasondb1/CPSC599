@@ -8,12 +8,11 @@
 ; can use this for other game events as well as required
 ;
 ; return countdown
-
+;
 timer: 
     ;read timer value
     ;if > 60 then reset timer and reduce COUNTDOWN by 1
     ;otherwise see if a jiffy has elapsed and inc counter and note duration
-    
     
     lda     PREVJIFFY
     cmp     JCLOCKL
@@ -82,9 +81,8 @@ playNote_end:
 
 ;==================================================================
 ; playSound - play a currently running sound
-
+;
 playSound:
-
     ;voice 3
     lda     V3DURATION
     bne     playSound_noise
@@ -103,7 +101,6 @@ playSound_end:
 ;
 ; return x - return joy position
 ;
-
 readJoy:   
     ldx     #$00
     
@@ -190,7 +187,7 @@ pto_end:
 ;==================================================================
 ; prand - simple linear feedback prng
 ; return prnad number in accumulator
-
+;
 prand_newseed:
     lda     JCLOCKL
     sta     RANDSEED
@@ -228,9 +225,7 @@ prand_end:
 ; display_text - displays the text in TEMP_PTR_L
 ; strings are currently terminated with $00
 ; 
-    
 display_text:
-
     ldy     #00
 display_text_next_char:
     lda     (TEMP_PTR_L),y
@@ -246,30 +241,40 @@ wait_for_user_input:
     jsr     timer
     jsr     playMusic   ;if music is wanted for intro
     jsr     playSound
-    lda     #$20       ;test fire button
+    lda     #$20        ;test fire button
     bit     JOY1_REGA
     bne     wait_for_user_input
     
 wait_for_user_input_end:
     rts
 
+set_current_map_key_dropped:
+    ldx     #MAPX
+    ldy     #MAPY
+    jsr     get_map_tile
+    and     #$f0
+    adc     #4
+    sta     (MAP_PTR_L),y
+    rts
 
 ; Overwrites a, x, y
 ; Clears the lower 4 bits of the current map 
+; Called when defeating a boss, and when entering a castle
 clear_current_map_contents:
     ldx     #MAPX
     ldy     #MAPY
     jsr     get_map_tile
     and     #$f0
     sta     (MAP_PTR_L),y
-
     rts
 
+; Called when entering the dungeon.
+; Turns the current map into a room with no exits
+; No escaping the final boss!
 set_current_map_final_boss:
     ldx     #MAPX
     ldy     #MAPY
     jsr     get_map_tile
     lda     #$ff
     sta     (MAP_PTR_L),y
-
     rts

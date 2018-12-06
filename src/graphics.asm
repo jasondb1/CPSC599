@@ -2,8 +2,6 @@
 ; update_status - draws the health and gold status on the screen
 
 update_status:
-
-    ;key icon 
     lda     PLAYERHASKEY
     beq     update_status_cont1
     lda     #YELLOW
@@ -94,7 +92,7 @@ print_num:
 ; drawScreen - draws the health and gold indicators
 drawScreen:
 
-;clear bottom 2 lines
+    ;clear bottom 2 lines
     ldx     #44
 drawScreen_loop
     lda     #CHAR_SOLID
@@ -104,8 +102,7 @@ drawScreen_loop
     dex
     bne     drawScreen_loop
         
-    ;draw all of the status indicators, but leave them black, color them in update status when
-    ; they are active
+    ;draw all of the status indicators, but leave them black, color them in update status when they are active
     
     ;L
     lda     #40
@@ -258,7 +255,6 @@ drawBoard_test_random_elements:
     cmp     #6                      ;5/255 chance of being a landscape element
     bcs     drawBoard_base_char
     jsr     prand                   ;randomize which element is drawn
-    ;jsr     prand
     and     #$07
     beq     drawBoard_base_char                  
     bne     drawBoard_to_screen
@@ -341,7 +337,7 @@ draw_other_dungeon_door:
     lda     #11                             ; dungeon door sprite (red)
     jsr     put_char
     jsr     draw_tower
-    
+
 draw_other_gold:
     jsr     prand
     cmp     #GOLD_CHANCE 
@@ -356,10 +352,8 @@ draw_other_health:
     lda     #21
     jsr     spawn_char
     
-    
 draw_other_end:
     rts
-    
     
 draw_tower:
     ldx     #$0b                            ; column
@@ -377,8 +371,8 @@ draw_tower:
    
    
 ;==================================================================
-; spawn_char - puts character onto screen in random location
-; a- the character (0-63) to place on screen 
+; spawn_char - puts sprite onto screen in random location
+; a- the sprite (0-63) to place on screen 
 ;
 ; return
 ; x-  returns col
@@ -405,10 +399,10 @@ spawn_char_relocate:
 
 ;==================================================================
 ; cont'd from spawn_char 
-; spawn_char_at - puts character at location y,x
-; TOS (top of stack) the character to display
-; y - row to place character
-; x - col to place character
+; spawn_char_at - puts sprite at location y,x
+; TOS (top of stack) the sprite to display
+; y - row to place sprite
+; x - col to place sprite
 
 spawn_char_at:
     ldy     SPAWN_Y
@@ -419,22 +413,18 @@ spawn_char_at:
     ldy     SPAWN_Y
     ldx     SPAWN_X
 
-
 spawn_char_end:
     rts
 
-
-
 ;==================================================================
-; put_char - puts character onto screen
-; a- the character (0-63) to place on screen
+; put_char - puts sprite onto screen
+; a- the sprite (0-63) to place on screen
 ; y - the row
 ; x - the col
 ;
-; returns - previous character
-
+; returns - previous sprite
 put_char:
-    and     #$7f               ; strip high bit of character
+    and     #$7f               ; strip high bit of sprite
     pha 
     jsr     position_to_offset ; return x is offset_high adder a - offset
     
@@ -451,10 +441,10 @@ put_char_cont:
     lda     (CHARPOS_L),y
     sta     TEMP20
     
-    ;draw character in new position
-    pla                      ; load the character
+    ;draw sprite in new position
+    pla                      ; load the sprite
     tax
-    sta     (CHARPOS_L),y    ; print next character to position
+    sta     (CHARPOS_L),y    ; print next sprite to position
     lda     char_color,x
     and     #$07             ; clear all but last 3 bits
     sta     (COLORMAP_L),y 
@@ -466,17 +456,17 @@ put_char_cont:
     dec     COLORMAP_H
     
 put_char_end:    
-    lda     TEMP20           ;return the previous character
+    lda     TEMP20           ;return the previous sprite
 
     rts
 
 ;==================================================================
-; get_char - puts character onto screen
+; get_char - puts sprite onto screen
 ; 
 ; y - the row
 ; x - the col
 ;
-; returns - character at position
+; returns - sprite at position
 
 get_char:
     
@@ -489,7 +479,7 @@ get_char:
     
 get_char_cont:
     ;store char under position
-    lda     (CHARPOS_L),y ;return character at y,x        
+    lda     (CHARPOS_L),y ;return sprite at y,x        
 
     ;restore CHARPOS_H and COLORMAP_H
     cpx     #$1
@@ -509,7 +499,7 @@ animateAttack:
     bne     animateAttack_enemy
 
     
-    ;replace the character underneath the players attack
+    ;replace the sprite underneath the players attack
     lda     ATTACK_CHARUNDER
     ldx     ATTACK_X
     ldy     ATTACK_Y
@@ -646,32 +636,3 @@ get_map_tile:
     lda     (MAP_PTR_L),y
 
     rts
-    
-;==================================================================
-; clear_map_tiles - clears everything off of the map except for borders
-; returns map offset in y
-; returns tile value in a
-;
-;clear_map_tiles:
-;    lda     #MAX_MAP_ROWS
-;    sta     MAPY
-;
-;clear_map_outer_loop:
-;    lda     #22
-;    sta     MAPX
-;
-;clear_map_inner_loop:
-;    jsr     get_map_tile    ;this is slow, but small, and only happens on new level
-;                            ;so will probably be acceptable
-;    and     #$f0            ;clear bottom bits
-;    sta     (MAP_PTR_L),y
-;    
-;    dec     MAPX
-;    bne     clear_map_inner_loop
-;    ;end inner loop
-;    
-;    dec     MAPY
-;    bne     clear_map_outer_loop     
-;    ;end outer loop
-;    
-;    rts

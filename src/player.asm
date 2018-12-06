@@ -1,4 +1,3 @@
-    
 ;==================================================================
 ; movePlayer - moves the player
 ; x - direction to move player 0 - do not move., 8 - up, 4 -down, 2 - right, 1 - left
@@ -31,8 +30,6 @@ move_player_left:
     sty     PLAYERDIR
 
     ;check if player off screen, change map and reset player column
-    ;ldy     #SCREENLEFT-1      ;removed this equates to 0 in current config
-    ;cpy     PLAYERX
     ldy     PLAYERX
     bne     move_player_right
     dec     MAPX
@@ -89,8 +86,6 @@ move_player_up:
     
     ;check if player off screen, change map and reset player row
     ldy     PLAYERY
-    ;ldy     #SCREENTOP-1        ;removed this equates to 0 in current config
-    ;cpy     PLAYERY
     bne     move_player_cont
     dec     MAPY
     ldy     #SCREENBOTTOM
@@ -107,7 +102,7 @@ move_player_cont:
     jsr     get_char
     cmp     #WALKABLE
     bcc     move_player_check_items
-    lda     TEMP3        ;restore last coordinates of player
+    lda     TEMP3                   ;restore last coordinates of player
     sta     PLAYERX
     lda     TEMP2
     sta     PLAYERY
@@ -115,13 +110,9 @@ move_player_cont:
     
 move_player_check_items:
     jsr     check_items
-    beq     move_player_end         ;when going through an exit do not redraw the player
-                                    ; or an artifact is created
+    beq     move_player_end         ;when going through an exit do not redraw the player or an artifact is created
                                     
 move_player_draw_char:
-
-
-move_player_draw_char1:
     ;draw player in new position
     ldy     PLAYERY
     ldx     PLAYERX
@@ -134,11 +125,9 @@ move_player_draw_char1:
 move_player_end:
     rts
 
-
 ;==================================================================
 ; check_items - deals with items under the player
 ; a - the character under the player
-;
 check_items:
 
 check_over_castle_door:
@@ -150,7 +139,6 @@ check_over_castle_door:
     lda     PLAYERHASKEY
     beq     check_over_dungeon_door   
     dec     PLAYERHASKEY
- 
     jsr     new_level
     jsr     drawBoard           ;redraw the board
     lda     #CHAR_PLAYER_L      ;spawn player location
@@ -256,9 +244,6 @@ check_items_end1:
 
 ;==================================================================
 ; player_attack - performs attack
-;
-;
-;
 player_attack:
 
     lda     ATTACK_ACTIVE
@@ -309,7 +294,7 @@ player_attack_cont:
 
     stx     ATTACK_X
     sty     ATTACK_Y
-    jsr     get_char        ;values must be between 44 and 55, could expand if required
+    jsr     get_char                    ;values must be between 44 and 55, could expand if required
     sta     ATTACK_CHARUNDER
     cmp     #44
     bcs     player_attack_hit
@@ -320,7 +305,7 @@ player_attack_miss:
     ;else miss    
     jsr     sound_miss
 
-    lda     PLAYER_SPRITE_CURRENT    ;animate with sword sprite the miss player sprite and sword are always 4 apart
+    lda     PLAYER_SPRITE_CURRENT       ;animate with sword sprite the miss player sprite and sword are always 4 apart
     sec
     sbc     #4                       
     bcs     player_attack_cont1
@@ -354,12 +339,12 @@ player_attack_enemy_killed:
 
     ; KILLED THE BOSS HERE
     ; Write 0 to the lower byte of map[PLAYERX, PLAYERY]
-    jsr     clear_current_map_contents
+    jsr     set_current_map_key_dropped
 
     rts
 
 player_attack_cont4:
-    lda     #$00                        ;deactivate enemy
+    lda     #$00                            ;deactivate enemy
     sta     enemy_type,x
 
     ;this counts the stats of number of enemies killed (delete if not used)
@@ -391,7 +376,6 @@ player_attack_end:
 ;
 ;   common code for attack activation
 ;
-
 activate_attack:
     inc     ATTACK_ACTIVE
     lda     #PLAYERSPEED
@@ -418,7 +402,6 @@ replace_base_char:
 ;
 ; a - amount of gold 
 ;     or add random gold
-
 add_gold_rand:
     jsr     prand
     and     #$07    ;each gold randomly worth up to 8
