@@ -354,6 +354,7 @@ player_attack_cont3:
     sta     ATTACK_ACTIVE
     ;put splat on screen
     lda     #CHAR_SPLAT
+    sta     ATTACK_CHARUNDER
     
 player_attack_cont1:
     ldy     ATTACK_Y
