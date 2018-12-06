@@ -54,17 +54,6 @@ update_status_health_cont:
     lda     PLAYERGOLD_L
     jsr     print_num
     
-    ;map position (for debugging) does not >9 correctly
-    ;map x 
-    ;clc
-    ;lda     #30
-    ;adc     MAPY
-    ;sta     SCREENSTATUS+16
-    
-    ;lda     #30
-    ;adc     MAPX
-    ;sta     SCREENSTATUS+18
-    
     rts
     
 ;==================================================================
@@ -385,41 +374,8 @@ draw_tower:
     jsr     put_char
     
     rts
-    
-;==================================================================
-; spawn_close - puts character onto screen in random location
-; this routine is used to drop items from a defeated enemy
-;
-; a- the character (0-63) to place on screen 
-;
-; return
-; x-  returns col
-; y - returns row
-;spawn_close:
-;    pha
-;    
-;spawn_close_relocate:
-;    jsr     prand 
-;    and     #$03    ;change if required
-;    adc     ATTACK_Y
-;    sbc     #$1
-;    beq     spawn_close_relocate    ; if 0
-;    cmp     SCREENBOTTOM+1
-;    bpl     spawn_close_relocate ;if off the bottom of screen
-;    tay
-;    sty     SPAWN_Y
-;    
-;    jsr     prand
-;    and     #$03
-;    adc     ATTACK_X
-;    sbc     #$1
-;    tax
-;    stx     SPAWN_X
-;    jsr     get_char        ;check if char under is < 8
-;    cmp     #$08
-;    bcs     spawn_close_relocate
-;    bcc     spawn_char_at    
-    
+   
+   
 ;==================================================================
 ; spawn_char - puts character onto screen in random location
 ; a- the character (0-63) to place on screen 

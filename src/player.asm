@@ -187,10 +187,16 @@ check_over_dungeon_door:
     stx     PLAYERX
 
     jsr     put_char
-    
+
     sta     CHARUNDERPLAYER
+    lda     #2
+    ; Change the color of the final boss
+    sta     char_color+44
+    sta     char_color+45
+    sta     char_color+46
+    sta     char_color+47
+
     lda     #0
-    
     rts
 
 check_over_key:

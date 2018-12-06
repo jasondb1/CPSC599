@@ -225,20 +225,6 @@ prand_end:
     rts
 
 ;==================================================================
-; keyWait - Waits of any key to be pressed
-    
-;loop_kw:
-;    jsr     GETIN
-;    beq     loop_kw
-;    rts
-    
-;wait_fire:
-;    lda     #$20         ;test fire button
-;    bit     JOY1_REGA
-;    bne     wait_fire   
-;    rts
-
-;==================================================================
 ; display_text - displays the text in TEMP_PTR_L
 ; strings are currently terminated with $00
 ; 

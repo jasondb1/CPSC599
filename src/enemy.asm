@@ -262,7 +262,7 @@ enemy_attack_hit:
     sec
     lda     PLAYERHEALTH
     sbc     TEMP10
-    ;sta     PLAYERHEALTH
+    sta     PLAYERHEALTH
     bpl     enemy_attack_cont1
     inc     GAMEOVER
     
