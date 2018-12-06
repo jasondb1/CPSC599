@@ -141,32 +141,22 @@ move_player_end:
 ;
 check_items:
 
-check_over_castle_door:
+check_items_item1:
     ;is it the castle door?
     cmp     #10
-    bne     check_over_dungeon_door
+    bne     check_items_item2
     
     ;check if player has key
     lda     PLAYERHASKEY
-
-    beq     check_over_dungeon_door   
+    ;beq     check_items_end
+    beq     check_items_item2   
     dec     PLAYERHASKEY
  
-
-
-    ; REMOVE THE RANDOMIZATION HERE
-    ; JUST 0-OUT THE LOWEST BYTE IN MAPDATA[PLAYERLOCATION], AND ALSO WHERE THE KEY WAS PICKED UP
-
     jsr     new_level
     jsr     drawBoard           ;redraw the board
-    lda     #CHAR_PLAYER_L      ;spawn player location
     
-
-    ; MIGHT BE RANDOMIZED HERE
+    lda     #CHAR_PLAYER_L      ;spawn player location
     jsr     spawn_char
-
-
-
     sty     PLAYERY
     stx     PLAYERX
     sta     CHARUNDERPLAYER
@@ -174,38 +164,44 @@ check_over_castle_door:
     
     rts
     
-check_over_dungeon_door:
-    ; DUPLICATE THE CASTLE DOOR CODE ONCE IT'S COMPLETE
+check_items_item2:
+    ;this was removed
     
-check_over_key:
+check_items_item3:
     ;is it the key?
     cmp     #8
-    bne     check_over_gold
+    bne     check_items_item4
     ;pick up key
     jsr     replace_base_char
     inc     PLAYERHASKEY
-  
-check_over_gold:
+    
+check_items_item4:  ;not currently implemented
+    ;found weapon
+    ;cmp     #8
+    ;bne     check_items_item5
+    ;TODO: pickup weapon and increase/decrease damage
+    
+check_items_item5:
     ;found gold
     cmp     #14
-    bne     check_over_bbq
+    bne     check_items_item6
     jsr     add_gold_rand
     jsr     replace_base_char
     
-check_over_bbq:
+check_items_item6:
     ;found bbq
     cmp     #9
-    bne     check_over_health
+    bne     check_items_item7
     ;Pickup BBQ
-    lda     #2                                  ;win condition
+    lda     #2          ;win condition
     sta     GAMEOVER
     
-check_over_health:
+check_items_item7:
     ;found health
     cmp     #21
     bne     check_items_end
     jsr     replace_base_char
-    inc     PLAYERHEALTH  
+    inc     PLAYERHEALTH        ;TODO: maybe increase health by 2?
     inc     PLAYERHEALTH
     lda     #MAX_HEALTH
     cmp     PLAYERHEALTH
@@ -220,7 +216,7 @@ check_items_end:
     beq     check_items_end1
     
 check_items_sound:
-    lda     #$f8                                ;pickup item noise
+    lda     #$f8        ;pickup item noise
     sta     VOICE3
     lda     #$05
     sta     V3DURATION
@@ -228,8 +224,7 @@ check_items_sound:
     
 check_items_end1:
     ;step sound
-    jsr     sound_step
-    rts
+    jmp     sound_step
     
 
 ;==================================================================
@@ -328,16 +323,10 @@ player_attack_cont2:
 player_attack_enemy_killed:
     lda     BOSS_ACTIVE
     beq     player_attack_cont4
-    jsr     boss_killed
-
-    ; KILLED THE BOSS HERE
-    ; Write 0 to the lower byte of map[PLAYERX, PLAYERY]
-    jsr     clear_current_map_contents
-
-    rts
+    jmp     boss_killed
 
 player_attack_cont4:
-    lda     #$00                        ;deactivate enemy
+    lda     #$00            ;deactivate enemy
     sta     enemy_type,x
 
     ;this counts the stats of number of enemies killed (delete if not used)

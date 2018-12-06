@@ -311,7 +311,7 @@ init:
     
     ;The intro needs to be here before initializing variables otherwise
     ;some of the variables used with basic routines could get overwritten
-    ;jsr     intro ; disable for testing  
+    jsr     intro ; disable for testing  
     
     ;0 initial values in cassette buffer
     lda     #$00
@@ -505,7 +505,8 @@ died_text:
 
 ;lower bits:
 ;f - spawn boss (do not spawn other enemies?)
-;e - spawn enemies as normal <14 (can move this up or down if required just change code in graphics.asm
+;e 
+; spawn enemies as normal <14 (can move this up or down if required just change code in graphics.asm
 ;c - draw river - vertical with bridge ; not implemented
 ;b - draw river - horiz with bridge ; not implemented
 ;a - draw lake ; not implemented
@@ -520,22 +521,23 @@ died_text:
 ;1 - 
 ;0 - Spawn enemies as normal
 
-; starts at top left of map, can partition into other areas, just adjust map position
+;starts at top left of map, can partition into other areas, just adjust map position
 ; must be 22 wide for offset calculation to work (currently uses the screen dimensions for offset)
 
 ; if you alter the rows set the constan MAX_MAP_ROWS to be the same
 map_data:
-;       1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22
-    hex D0  98  58  D8  F0  F0  F0  90  10  50  F0  F0  90  10  10  10  50  90  30  30  30  50
-    hex C0  8F  4F  AF  30  30  30  00  20  20  30  30  40  80  60  80  60  C0  90  30  50  C0
-    hex AF  68  80  10  10  10  10  00  10  10  50  90  60  A0  50  A0  50  C0  C0  D8  C0  C0
-    hex 90  50  A9  20  20  00  20  00  20  00  60  A0  50  90  60  90  60  C0  C0  CF  C0  C0
-    hex 80  00  30  30  79  A0  30  60  B0  60  D0  F0  C0  A0  50  A0  50  80  40  C0  C0  C0
-    hex 80  40  B0  30  50  90  30  30  10  70  88  30  40  90  60  90  60  C0  C0  C0  C0  C0
-    hex 80  60  D0  D0  C0  80  50  F0  80  F0  E0  90  40  A0  50  A0  50  C0  C0  C0  C0  C0
-    hex C0  90  00  40  A0  00  60  B0  00  10  10  00  40  90  60  90  60  C0  A0  60  C0  C0
-    hex A0  00  40  A0  30  00  30  30  60  A0  00  20  60  EF  F0  80  50  A0  30  30  60  C0
-    hex F0  A0  20  30  70  A0  30  30  30  30  20  30  30  30  30  20  20  30  30  30  30  60
+;          1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22
+    hex    D0 90 50 DF F0 F0 F0 90 10 50 F0 F0 90 10 10 10 50 90 30 30 30 50
+    hex    C0 80 40 A0 30 30 30 00 20 20 30 30 40 80 60 80 60 C0 90 30 50 C0
+    hex    A0 60 80 10 10 10 10 00 10 10 50 90 60 A0 50 A0 50 C0 C0 DF C0 C0
+    hex    90 50 A0 20 20 00 20 00 20 00 60 A0 50 90 60 90 60 C0 C0 C0 C0 C0
+    hex    80 00 30 30 79 A0 30 60 B0 60 D0 F0 C0 A0 50 A0 50 80 40 C0 C0 C0
+    hex    80 40 B0 30 50 90 30 30 10 70 88 30 40 90 60 90 60 C0 C0 C0 C0 C0
+    hex    80 60 D0 D0 C0 80 50 F0 80 F0 E0 90 40 A0 50 A0 50 C0 C0 C0 C0 C0
+    hex    C0 90 00 40 A0 00 60 B0 00 10 10 00 40 90 60 90 60 C0 A0 60 C0 C0
+    hex    A0 00 40 A0 30 00 30 30 60 A0 00 20 60 EF F0 80 50 A0 30 30 60 C0
+    hex    F0 A0 20 30 70 A0 30 30 30 30 20 30 30 30 30 20 20 30 30 30 30 60
+  
 ;==================================================================
 ;Colors
 ;BLACK           equ #0
@@ -551,7 +553,7 @@ map_data:
 ;lowest 3 bits are color info
 
 char_color  hex 00 05 03 03 03 07 03 04 ;0-7
-            hex 07 02 01 02 05 05 07 02 ;8-15
+            hex 07 02 01 01 05 05 07 02 ;8-15
             hex 00 05 05 05 05 02 02 05 ;16-23
             hex 01 01 06 04 01 05 01 01 ;24-31
             hex 01 01 01 01 01 01 01 01 ;32-39;

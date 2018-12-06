@@ -267,14 +267,3 @@ wait_for_user_input:
 wait_for_user_input_end:
     rts
 
-
-; Overwrites a, x, y
-; Clears the lower 4 bits of the current map 
-clear_current_map_contents:
-    ldx     #MAPX
-    ldy     #MAPY
-    jsr     get_map_tile
-    and     #$f0
-    sta     (MAP_PTR_L),y
-
-    rts
