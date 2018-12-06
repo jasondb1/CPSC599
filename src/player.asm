@@ -148,24 +148,14 @@ check_over_castle_door:
     
     ;check if player has key
     lda     PLAYERHASKEY
-
     beq     check_over_dungeon_door   
     dec     PLAYERHASKEY
  
-
-
-    ; REMOVE THE RANDOMIZATION HERE
-    ; JUST 0-OUT THE LOWEST BYTE IN MAPDATA[PLAYERLOCATION], AND ALSO WHERE THE KEY WAS PICKED UP
-
     jsr     new_level
     jsr     drawBoard           ;redraw the board
     lda     #CHAR_PLAYER_L      ;spawn player location
-    
-
-    ; MIGHT BE RANDOMIZED HERE
+     
     jsr     spawn_char
-
-
 
     sty     PLAYERY
     stx     PLAYERX
@@ -175,8 +165,34 @@ check_over_castle_door:
     rts
     
 check_over_dungeon_door:
-    ; DUPLICATE THE CASTLE DOOR CODE ONCE IT'S COMPLETE
+    cmp     #11                     ; Over the dungeon entrance
+    bne     check_over_key
+
+    lda     LEVEL                   ; Only enter dungeon on level 3
+
+    cmp     #3                      
+    bne     check_over_key
+
+    jsr     new_level
+    jsr     set_current_map_final_boss
+
+    jsr     drawBoard           ;redraw the board
+    lda     #CHAR_PLAYER_L      ;spawn player location
+
+    ldx     #5
+    ldy     #10
+    stx     SPAWN_X
+    sty     SPAWN_Y
+    sty     PLAYERY
+    stx     PLAYERX
+
+    jsr     put_char
     
+    sta     CHARUNDERPLAYER
+    lda     #0
+    
+    rts
+
 check_over_key:
     ;is it the key?
     cmp     #8

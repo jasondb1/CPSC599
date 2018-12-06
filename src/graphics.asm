@@ -582,13 +582,9 @@ animateAttack_end:
     rts
 
 ;==================================================================
-; new_level - generates new position for boss, exit, and player locations
+; Removes the entered castle entrance, changes the difficulty, and changes the map colors
 ;
 new_level:
-
-    
-    ; CHANGE THE COLOR
-    ; REMOVE THE CASTLE FROM THE CURRENT MAP
     jsr     clear_current_map_contents
 
     inc     LEVEL
@@ -602,25 +598,7 @@ new_level:
     lda     #3
     sta     TEMP10 
     
-;new_level_loop:
-;    ;draw n number of bosses
-;    jsr     find_empty_map_tile
-;    lda     (MAP_PTR_L),y 
-;    ora     #$0f             ;last 4 bytes will always be 0 because of find_empty_map_tile
-;    sta     (MAP_PTR_L),y 
-;    
-;    ;draw n number of exits
-;    jsr     find_empty_map_tile
-;    lda     (MAP_PTR_L),y 
-;    ora     #$08             ;last 4 bytes will always be 0 because of find_empty_map_tile
-;    sta     (MAP_PTR_L),y 
-;    
-;    dec     TEMP10
-;    bpl     new_level_loop
-;    
-;    ;set player starting position, stored in MAPX and MAPY
-;    jsr     find_empty_map_tile
-    
+; Changes the color of the map based on the current level
 new_level_new_color:
     lda     LEVEL
     cmp     #1

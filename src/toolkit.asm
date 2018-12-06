@@ -278,3 +278,12 @@ clear_current_map_contents:
     sta     (MAP_PTR_L),y
 
     rts
+
+set_current_map_final_boss:
+    ldx     #MAPX
+    ldy     #MAPY
+    jsr     get_map_tile
+    lda     #$ff
+    sta     (MAP_PTR_L),y
+
+    rts

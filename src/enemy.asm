@@ -262,7 +262,7 @@ enemy_attack_hit:
     sec
     lda     PLAYERHEALTH
     sbc     TEMP10
-    sta     PLAYERHEALTH
+    ;sta     PLAYERHEALTH
     bpl     enemy_attack_cont1
     inc     GAMEOVER
     
@@ -607,10 +607,8 @@ boss_killed:
     jsr     inactivate_all_enemies
     jsr     erase_boss
     
-    ; CHANGE TO ONLY DROP BBQ ON CERTAIN MAP SQUARE, DUNGEON MAP
-
     lda     LEVEL
-    cmp     HIGHEST_LEVEL
+    cmp     #4
     bne     boss_killed_drop_key
     lda     #9                          ;bbq end object
     bne     boss_killed_cont
