@@ -56,8 +56,15 @@ intro_loop:
     
     ;move screen
     dec     SCR_VER
+    ldx     GAMEOVER
+    beq     intro_loop_cont
+    lda     #25
+    bne     intro_loop_cont2
+    
+intro_loop_cont:    
     lda     #72        ;standard screen position
-    ;cmp     SCR_VER       
+    ;cmp     SCR_VER    
+intro_loop_cont2:
     cmp     SCR_VER       
     bne     intro_loop
 
