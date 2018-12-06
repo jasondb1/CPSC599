@@ -332,40 +332,26 @@ drawBoard_end:
 ; returns - nothing
 
 draw_other:
-    
-    cmp     #$08        ;draw Castle
+    lda     TEMP10                          ; map data
+    cmp     #$08                            ; draw castle entrance
     bne     draw_other_dungeon_door
     
-    ldx     #$0a          ;column
-    ldy     #$0a          ;row
-    lda     #10
+    ldx     #$0a                            ; column
+    ldy     #$0a                            ; row
+    lda     #10                             ; castle door sprite (white)
     jsr     put_char
     jsr     draw_tower
     
 draw_other_dungeon_door:
-    ;lda     TEMP10      ;map data
-    ;cmp     #$09        ;draw dungeon entrance
-    ;bne     draw_other_key
-    ;
-    ;ldx     #$0a          ;column
-    ;ldy     #$0a          ;row
-    ;lda     #11         ;dungeon door
-    ;jsr     put_char
-    ;jsr     draw_tower
-
-draw_other_key: ;can omit this after testing, key is only spawned with boss
-    lda     TEMP10      ;map data
-    cmp     #$04        ;draw key
-    bne     draw_other_bbq
-    lda     #8
-    jsr     spawn_char
-    
-draw_other_bbq:;can omit this after testing, bbq is only spawned with boss
-    lda     TEMP10      ;map data
-    cmp     #$05        ;draw dungeon entrance
-    bne     draw_other_gold
-    lda     #9
-    jsr     spawn_char
+    lda     TEMP10                          ; map data
+    cmp     #$09                            ; draw dungeon entrance
+    bne     draw_other_gold 
+     
+    ldx     #$0a                            ; column
+    ldy     #$0a                            ; row
+    lda     #11                             ; dungeon door sprite (red)
+    jsr     put_char
+    jsr     draw_tower
     
 draw_other_gold:
     jsr     prand
@@ -387,14 +373,14 @@ draw_other_end:
     
     
 draw_tower:
-    ldx     #$0b          ;column
-    ldy     #$0a          ;row
-    lda     #25
+    ldx     #$0b                            ; column
+    ldy     #$0a                            ; row
+    lda     #25                             ; tower sprite (white)
     pha
     jsr     put_char
     
-    ldx     #$09          ;column
-    ldy     #$0a          ;row
+    ldx     #$09                            ; column
+    ldy     #$0a                            ; row
     pla
     jsr     put_char
     
@@ -600,10 +586,14 @@ animateAttack_end:
 ;
 new_level:
 
-    jsr    clear_map_tiles
-    inc    LEVEL
     
-    lda    LEVEL            ;BASE_HEALTH = 3 * level
+    ; CHANGE THE COLOR
+    ; REMOVE THE CASTLE FROM THE CURRENT MAP
+    jsr     clear_current_map_contents
+
+    inc     LEVEL
+    
+    lda     LEVEL            ;BASE_HEALTH = 3 * level
     asl     
     clc
     adc     LEVEL   
@@ -612,34 +602,57 @@ new_level:
     lda     #3
     sta     TEMP10 
     
-new_level_loop:
-    ;draw n number of bosses
-    jsr     find_empty_map_tile
-    lda     (MAP_PTR_L),y 
-    ora     #$0f             ;last 4 bytes will always be 0 because of find_empty_map_tile
-    sta     (MAP_PTR_L),y 
-    
-    ;draw n number of exits
-    jsr     find_empty_map_tile
-    lda     (MAP_PTR_L),y 
-    ora     #$08             ;last 4 bytes will always be 0 because of find_empty_map_tile
-    sta     (MAP_PTR_L),y 
-    
-    dec     TEMP10
-    bpl     new_level_loop
-    
-    ;set player starting position, stored in MAPX and MAPY
-    jsr     find_empty_map_tile
+;new_level_loop:
+;    ;draw n number of bosses
+;    jsr     find_empty_map_tile
+;    lda     (MAP_PTR_L),y 
+;    ora     #$0f             ;last 4 bytes will always be 0 because of find_empty_map_tile
+;    sta     (MAP_PTR_L),y 
+;    
+;    ;draw n number of exits
+;    jsr     find_empty_map_tile
+;    lda     (MAP_PTR_L),y 
+;    ora     #$08             ;last 4 bytes will always be 0 because of find_empty_map_tile
+;    sta     (MAP_PTR_L),y 
+;    
+;    dec     TEMP10
+;    bpl     new_level_loop
+;    
+;    ;set player starting position, stored in MAPX and MAPY
+;    jsr     find_empty_map_tile
     
 new_level_new_color:
-    jsr     prand
-    and     #$07
-    beq     new_level_new_color
-    sta     char_color+1            ;base tile
-    
-    ;toggle between castle and forest
-    lda     #23
-    adc     #0
+    lda     LEVEL
+    cmp     #1
+    bne     new_level_new_color_2
+
+    ldx     #PURPLE
+    ldy     #YELLOW
+    jmp     new_level_new_color_end
+
+new_level_new_color_2:
+    cmp     #2
+    bne     new_level_new_color_3
+
+    ldx     #BLUE
+    ldy     #WHITE
+    jmp     new_level_new_color_end
+
+new_level_new_color_3:
+    cmp     #3
+    bne     new_level_new_color_4
+
+    ldx     #RED
+    ldy     #CYAN
+    jmp     new_level_new_color_end
+
+new_level_new_color_4:
+    ldx     #BLACK
+    ldy     #WHITE
+
+new_level_new_color_end:
+    stx     char_color+1            ;base tile
+    sty     char_color+23
 
     rts
 
@@ -670,7 +683,7 @@ find_empty_map_tile_loop1:
     sta     MAPY
 
     jsr     get_map_tile
-    cmp     #$f0
+    cmp     #$f0                    ; Borders on all sides, don't go here
     bcs     find_empty_map_tile
     and     #$0f
     bne     find_empty_map_tile
@@ -705,76 +718,26 @@ get_map_tile:
 ; returns map offset in y
 ; returns tile value in a
 ;
-clear_map_tiles:
-    lda     #MAX_MAP_ROWS
-    sta     MAPY
-
-clear_map_outer_loop:
-    lda     #22
-    sta     MAPX
-
-clear_map_inner_loop:
-    jsr     get_map_tile    ;this is slow, but small, and only happens on new level
-                            ;so will probably be acceptable
-    and     #$f0            ;clear bottom bits
-    sta     (MAP_PTR_L),y
-    
-    dec     MAPX
-    bne     clear_map_inner_loop
-    ;end inner loop
-    
-    dec     MAPY
-    bne     clear_map_outer_loop     
-    ;end outer loop
-    
-
-    rts
-
-;==================================================================
-; mirror_char - mirrors the character in a and changes char in memory
+;clear_map_tiles:
+;    lda     #MAX_MAP_ROWS
+;    sta     MAPY
 ;
-; use to reverse direction of character
-; 
-; a - character
+;clear_map_outer_loop:
+;    lda     #22
+;    sta     MAPX
 ;
-
-;mirror_char:
-;    asl     ;multiply a by 8 to get offset
-;    asl
-;    asl
+;clear_map_inner_loop:
+;    jsr     get_map_tile    ;this is slow, but small, and only happens on new level
+;                            ;so will probably be acceptable
+;    and     #$f0            ;clear bottom bits
+;    sta     (MAP_PTR_L),y
 ;    
-;    lda     #<char_set  ;set character pointer
-;    sta     TEMP_PTR_L
-;    lda     #>char_set
-;    sta     TEMP_PTR_H
-;    lda     #$1
-;    sta     TEMP1
-;    ldy     #7
-;
-;mc_loop_outer:              ;loop through each byte of character
-;    ldx     #7
-;    lda     (TEMP_PTR_L),y
-;    sta     TEMP2
-;
-;mc_loop_inner:              ;loop through each bit of byte
-;    lsr     TEMP2
-;    bcs     mc_bitset
-;    asl
-;    jmp     mc_loop_inner_test
-;
-;mc_bitset:
-;    asl
-;    ora     TEMP1
+;    dec     MAPX
+;    bne     clear_map_inner_loop
+;    ;end inner loop
 ;    
-;mc_loop_inner_test:    
-;    dex
-;    cpx     $ff
-;    bne     mc_loop_inner
+;    dec     MAPY
+;    bne     clear_map_outer_loop     
+;    ;end outer loop
 ;    
-;    sta     (TEMP_PTR_L),y  ;store reversed byte into place
-;    dey
-;    cpy     $ff
-;    bne     mc_loop_outer;
-;
-;mc_end:
 ;    rts
