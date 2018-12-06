@@ -1,6 +1,3 @@
-
-
-
 ;==================================================================
 ; spawnEnemy - spawns enemies on each screen
 ; 
@@ -603,6 +600,7 @@ erase_boss_loop:
 ;==================================================================
 ; boss_killed - kills the boss
 ; 
+;
 boss_killed:
     jsr     inactivate_all_enemies
     jsr     erase_boss
@@ -610,7 +608,7 @@ boss_killed:
     lda     LEVEL
     cmp     #4
     bne     boss_killed_drop_key
-    lda     #9                          ;bbq end object
+    lda     #9          ;bbq end object
     bne     boss_killed_cont
     
 boss_killed_drop_key:
